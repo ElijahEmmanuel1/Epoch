@@ -332,105 +332,1181 @@ print(col + row)
 
   // ═══════════════════════════════════════
   // MODULE 3 — RÉSEAUX SUPERFICIELS
+  // (Ch. 3 — Understanding Deep Learning)
   // ═══════════════════════════════════════
   {
     id: 'shallow-networks',
     title: 'Réseaux de Neurones Superficiels',
     shortTitle: 'Shallow Net',
-    description: 'Comprendre les réseaux à une couche cachée, ReLU, et le théorème d\'approximation universelle.',
+    description: 'Comprendre les réseaux à une couche cachée, ReLU, les régions linéaires et le théorème d\'approximation universelle (Ch. 3 — UDL).',
     status: 'available',
     progress: 0,
     dependencies: ['tensors'],
     category: 'fundamentals',
     theory: [
+      // ──────── SECTION 1 : INTRODUCTION ────────
       {
         type: 'text',
-        content: `Un **réseau de neurones superficiel** (shallow network) est une fonction **y = f[x, ϕ]** avec une seule couche cachée. Il prend une entrée, calcule des **unités cachées** (hidden units) via une activation, puis combine linéairement ces unités pour produire la sortie.\n\nLe réseau se décompose en trois étapes :\n1. Calculer des fonctions linéaires de l'entrée\n2. Appliquer une **fonction d'activation** a[•]\n3. Combiner linéairement les résultats`,
-      },
-      {
-        type: 'equation',
-        content: 'y = \\phi_0 + \\phi_1 \\, a[\\theta_{10} + \\theta_{11} x] + \\phi_2 \\, a[\\theta_{20} + \\theta_{21} x] + \\phi_3 \\, a[\\theta_{30} + \\theta_{31} x]',
-        label: 'Réseau superficiel (Shallow Network)',
-        highlightVar: 'output',
-      },
-      {
-        type: 'text',
-        content: `La fonction d'activation la plus utilisée est le **ReLU** (Rectified Linear Unit). Elle retourne l'entrée si elle est positive, et zéro sinon. Cette simplicité rend le calcul efficace et produit des **fonctions linéaires par morceaux**.`,
-      },
-      {
-        type: 'equation',
-        content: 'a[z] = \\text{ReLU}[z] = \\begin{cases} 0 & \\text{si } z < 0 \\\\ z & \\text{si } z \\geq 0 \\end{cases}',
-        label: 'Rectified Linear Unit (ReLU)',
-        highlightVar: 'relu',
+        content: `Le chapitre 2 a introduit la régression linéaire (une droite). Mais une droite ne peut pas capturer de relations complexes. Les **réseaux superficiels** (shallow neural networks) décrivent des **fonctions linéaires par morceaux** (piecewise linear functions) suffisamment expressives pour approximer n'importe quelle relation entre entrées et sorties.`,
       },
       {
         type: 'callout',
-        content: '🧠 **Théorème d\'approximation universelle** : un réseau superficiel avec suffisamment d\'unités cachées peut approximer n\'importe quelle fonction continue sur un compact. Chaque unité cachée contribue un "joint" à la fonction, créant des régions linéaires supplémentaires.',
+        content: '💡 Un réseau "superficiel" désigne un réseau avec **une seule couche cachée** (hidden layer). Ce terme contraste avec "profond" (deep), qui désigne les réseaux à plusieurs couches cachées (Ch. 4).',
+      },
+
+      // ──────── SECTION 2 : L'EXEMPLE DU RÉSEAU ────────
+      {
+        type: 'text',
+        content: `## 3.1 — Exemple de réseau neuronal\n\nConsidérons un réseau avec **10 paramètres** ϕ = {ϕ₀, ϕ₁, ϕ₂, ϕ₃, θ₁₀, θ₁₁, θ₂₀, θ₂₁, θ₃₀, θ₃₁} qui transforme un scalaire x en un scalaire y. Le calcul se fait en **3 étapes** :`,
+      },
+      {
+        type: 'diagram',
+        content: `      ÉTAPE 1             ÉTAPE 2              ÉTAPE 3
+  ┌─────────────┐   ┌──────────────┐   ┌───────────────────┐
+  │ 3 fonctions │   │  Activation  │   │   Combinaison     │
+  │ linéaires   │──▶│   ReLU a[•]  │──▶│   linéaire        │
+  │ de l'entrée │   │  (clip < 0)  │   │   + offset ϕ₀     │
+  └─────────────┘   └──────────────┘   └───────────────────┘
+
+  θ₁₀ + θ₁₁·x  ──▶  h₁ = ReLU[•] ──┐
+                                      ├──▶ y = ϕ₀ + ϕ₁h₁ + ϕ₂h₂ + ϕ₃h₃
+  θ₂₀ + θ₂₁·x  ──▶  h₂ = ReLU[•] ──┤
+                                      │
+  θ₃₀ + θ₃₁·x  ──▶  h₃ = ReLU[•] ──┘`,
+        label: 'Fig. 3.3 — Pipeline de calcul d\'un réseau superficiel',
+      },
+      {
+        type: 'equation',
+        content: 'y = f[x, \\boldsymbol{\\phi}] = \\phi_0 + \\phi_1 \\, a[\\theta_{10} + \\theta_{11} x] + \\phi_2 \\, a[\\theta_{20} + \\theta_{21} x] + \\phi_3 \\, a[\\theta_{30} + \\theta_{31} x]',
+        label: 'Éq. 3.1 — Réseau superficiel (Shallow Network)',
+        highlightVar: 'output',
+      },
+
+      // ──────── SECTION 3 : ReLU ────────
+      {
+        type: 'text',
+        content: `## 3.1.1 — La fonction d'activation ReLU\n\nLa fonction d'activation **a[•]** est ce qui rend le réseau **non-linéaire**. Sans elle, le réseau ne serait qu'une autre fonction linéaire (voir Problème 3.1). Le choix le plus courant est le **ReLU** (Rectified Linear Unit) :`,
+      },
+      {
+        type: 'equation',
+        content: 'a[z] = \\text{ReLU}[z] = \\max(0, z) = \\begin{cases} 0 & \\text{si } z < 0 \\\\ z & \\text{si } z \\geq 0 \\end{cases}',
+        label: 'Éq. 3.2 — Rectified Linear Unit (ReLU)',
+        highlightVar: 'relu',
+      },
+      {
+        type: 'diagram',
+        content: `  y ▲
+    │        ╱
+    │       ╱
+    │      ╱   ← pente = 1
+    │     ╱
+    │    ╱
+  ──┼───╱──────────▶ z
+    │  ╱
+    │ (clipped à 0 pour z < 0)
+    │`,
+        label: 'Fig. 3.1 — Graphe du ReLU : retourne z si z ≥ 0, sinon 0',
       },
       {
         type: 'text',
-        content: `Les **unités cachées** h₁, h₂, h₃ sont des résultats intermédiaires. Chaque unité contient une fonction linéaire de l'entrée, clippée par ReLU. La sortie finale est une combinaison linéaire de ces unités :\n\n**y = ϕ₀ + ϕ₁h₁ + ϕ₂h₂ + ϕ₃h₃**\n\nAvec D unités cachées, on obtient un maximum de D+1 régions linéaires.`,
+        content: `**En PyTorch**, le ReLU existe sous 3 formes :\n\n- **\`torch.relu(tensor)\`** — fonction simple appliquée à un tenseur\n- **\`torch.clamp(tensor, min=0)\`** — équivalent plus explicite\n- **\`nn.ReLU()\`** — module réutilisable dans un \`nn.Sequential\` ou \`nn.Module\`\n\n**Pourquoi ReLU est si populaire ?** Sa dérivée vaut 1 pour z > 0 et 0 pour z < 0. Cela rend le gradient stable pendant la backpropagation (contrairement au sigmoid/tanh qui "saturent").`,
+      },
+      {
+        type: 'callout',
+        content: '⚠ **Le problème du "dying ReLU"** : si toutes les entrées d\'un neurone sont négatives, le ReLU retourne toujours 0 et le gradient est nul. Ce neurone est "mort" — il ne peut plus apprendre. Solutions : Leaky ReLU (pente 0.01 pour z < 0), Parametric ReLU, ou ELU.',
+      },
+
+      // ──────── SECTION 4 : UNITÉS CACHÉES ────────
+      {
+        type: 'text',
+        content: `## 3.1.2 — Les unités cachées (Hidden Units)\n\nLe calcul se décompose naturellement en **unités cachées** h₁, h₂, h₃. Chaque unité est un neurone qui applique une fonction linéaire de l'entrée puis la passe par ReLU :`,
+      },
+      {
+        type: 'equation',
+        content: '\\begin{aligned} h_1 &= a[\\theta_{10} + \\theta_{11}x] \\\\ h_2 &= a[\\theta_{20} + \\theta_{21}x] \\\\ h_3 &= a[\\theta_{30} + \\theta_{31}x] \\end{aligned}',
+        label: 'Éq. 3.3 — Calcul des unités cachées',
+        highlightVar: 'relu',
+      },
+      {
+        type: 'text',
+        content: `Puis la sortie combine linéairement ces unités cachées :`,
+      },
+      {
+        type: 'equation',
+        content: 'y = \\phi_0 + \\phi_1 h_1 + \\phi_2 h_2 + \\phi_3 h_3',
+        label: 'Éq. 3.4 — Combinaison linéaire de sortie',
+        highlightVar: 'output',
+      },
+
+      // ──────── SECTION 5 : PATTERNS D'ACTIVATION ────────
+      {
+        type: 'text',
+        content: `## 3.1.3 — Régions linéaires & Patterns d'activation\n\nChaque unité cachée crée un **"joint"** (coude) dans la fonction de sortie — le point où la droite θ•₀ + θ•₁x croise zéro. De part et d'autre de ce joint, l'unité est soit **active** (z ≥ 0, passe l'entrée) soit **inactive** (z < 0, retourne 0).\n\nAvec 3 unités cachées, on obtient jusqu'à **4 régions linéaires** et **3 joints**. Chaque région correspond à un **pattern d'activation** différent :`,
+      },
+      {
+        type: 'diagram',
+        content: `  y ▲
+    │         ╱╲
+    │        ╱  ╲          ╱
+    │       ╱    ╲        ╱
+    │      ╱      ╲      ╱
+    │     ╱        ╲    ╱
+    │    ╱    R2    ╲  ╱
+    │   ╱            ╲╱
+    │  ╱  R1      R3    R4
+  ──┼─╱──────┼──────┼──────┼──▶ x
+    │  joint₁   joint₂   joint₃
+
+  R1 : h₁=off, h₂=off, h₃=off  →  pente = 0
+  R2 : h₁=on,  h₂=off, h₃=off  →  pente = ϕ₁·θ₁₁
+  R3 : h₁=on,  h₂=on,  h₃=off  →  pente = ϕ₁·θ₁₁ + ϕ₂·θ₂₁
+  R4 : h₁=on,  h₂=on,  h₃=on   →  pente = ϕ₁·θ₁₁ + ϕ₂·θ₂₁ + ϕ₃·θ₃₁`,
+        label: 'Fig. 3.2 — Fonction linéaire par morceaux avec 4 régions',
+      },
+      {
+        type: 'callout',
+        content: '🧠 **Intuition clé** : la pente de chaque région est la somme des pentes θ•₁ × ϕ• des unités **actives** dans cette région. L\'offset ϕ₀ contrôle la hauteur globale. C\'est ainsi qu\'on "dessine" des fonctions complexes morceau par morceau.',
+      },
+
+      // ──────── SECTION 6 : NOTATION MATRICIELLE ────────
+      {
+        type: 'text',
+        content: `## 3.2 — Notation matricielle & PyTorch\n\nOn regroupe le calcul en notation matricielle. Soit **β₀** le vecteur de biais de la couche cachée, **Ω₀** la matrice de poids d'entrée, **β₁** le biais de sortie, et **ω₁** les poids de sortie :`,
+      },
+      {
+        type: 'equation',
+        content: '\\mathbf{h} = a\\!\\left[\\boldsymbol{\\beta}_0 + \\boldsymbol{\\Omega}_0 \\mathbf{x}\\right] \\qquad y = \\beta_1 + \\boldsymbol{\\omega}_1^T \\mathbf{h}',
+        label: 'Notation matricielle compacte',
+        highlightVar: 'hidden',
+      },
+      {
+        type: 'text',
+        content: `**En PyTorch, \`nn.Linear(in, out)\`** implémente exactement cette opération :\n\n- Il stocke une matrice de poids **W** de taille (out × in)\n- Un vecteur de biais **b** de taille (out)\n- La sortie est : **output = x @ W.T + b**\n\nUn réseau superficiel complet se construit avec :`,
+      },
+      {
+        type: 'diagram',
+        content: `  ┌──────────────────────────────────────────────────┐
+  │  model = nn.Sequential(                          │
+  │      nn.Linear(D_i, D),    # Ω₀·x + β₀          │
+  │      nn.ReLU(),            # a[•]                │
+  │      nn.Linear(D, D_o)     # ω₁ᵀ·h + β₁          │
+  │  )                                               │
+  └──────────────────────────────────────────────────┘
+
+  Où :
+    D_i = dimension d'entrée
+    D   = nombre d'unités cachées (hidden units)
+    D_o = dimension de sortie`,
+        label: 'Construction PyTorch d\'un réseau superficiel',
+      },
+      {
+        type: 'text',
+        content: `**Fonctions PyTorch utiles pour cette étape :**\n\n- **\`nn.Sequential(*layers)\`** : empile des couches en séquence, forward automatique\n- **\`nn.Linear(in_features, out_features)\`** : couche dense (transformation affine)\n- **\`nn.ReLU()\`** : module d'activation ReLU (réutilisable)\n- **\`model.parameters()\`** : itérateur sur tous les poids/biais du modèle\n- **\`sum(p.numel() for p in model.parameters())\`** : compte le nombre total de paramètres`,
+      },
+
+      // ──────── SECTION 7 : NOMBRE DE PARAMÈTRES ────────
+      {
+        type: 'text',
+        content: `## 3.3 — Comptage des paramètres\n\nUn réseau superficiel avec **Dᵢ** entrées, **D** unités cachées et **Dₒ** sorties a :`,
+      },
+      {
+        type: 'equation',
+        content: 'N_{\\text{params}} = \\underbrace{D \\cdot (D_i + 1)}_{\\text{couche cachée}} + \\underbrace{D_o \\cdot (D + 1)}_{\\text{couche de sortie}}',
+        label: 'Éq. — Nombre de paramètres (Problème 3.17)',
+      },
+      {
+        type: 'text',
+        content: `Exemple : Dᵢ = 1, D = 3, Dₒ = 1 → 3×(1+1) + 1×(3+1) = 6 + 4 = **10 paramètres** — exactement les 10 de l'Éq. 3.1 !\n\nExemple 2 : Dᵢ = 784 (image 28×28), D = 100, Dₒ = 10 → 100×785 + 10×101 = 78,500 + 1,010 = **79,510 paramètres**.`,
+      },
+
+      // ──────── SECTION 8 : THÉORÈME D'APPROXIMATION ────────
+      {
+        type: 'text',
+        content: `## 3.4 — Théorème d'approximation universelle\n\nAvec D unités cachées et ReLU, le réseau crée au maximum **D + 1 régions linéaires**. Plus la fonction cible est complexe, plus il faut de régions (et donc d'unités) pour l'approximer :`,
+      },
+      {
+        type: 'diagram',
+        content: `  D = 2           D = 5               D = 20
+  ▲               ▲                   ▲
+  │ ╱╲            │    ╱╲              │  ·∼∼∼∼·
+  │╱  ╲  ╱       │   ╱  ╲  ╱╲        │ ∫   f(x) dx
+  │    ╲╱         │  ╱    ╲╱  ╲ ╱    │ ≈ somme de
+  │               │ ╱          ╲╱     │   segments
+  └──────▶       └──────────▶       └──────────▶
+  3 régions       6 régions           ≈ courbe lisse`,
+        label: 'Fig. 3.5 — Approximation : plus de hidden units → plus de régions → meilleure fidélité',
+      },
+      {
+        type: 'callout',
+        content: '🧠 **Théorème d\'approximation universelle** (Cybenko 1989, Hornik 1991) : pour toute fonction continue f définie sur un compact et tout ε > 0, il existe un réseau superficiel avec suffisamment d\'unités cachées tel que |f(x) - réseau(x)| < ε pour tout x. En d\'autres termes, un réseau à **une seule couche cachée peut approximer n\'importe quelle fonction continue** !',
+      },
+
+      // ──────── SECTION 9 : ENTRÉES/SORTIES MULTIDIMENSIONNELLES ────────
+      {
+        type: 'text',
+        content: `## 3.5 — Entrées et sorties multidimensionnelles\n\n**Entrées multiples (Dᵢ > 1)** : chaque unité cachée reçoit une combinaison linéaire de **toutes** les entrées. Par exemple avec 2 entrées x = [x₁, x₂]ᵀ :`,
+      },
+      {
+        type: 'equation',
+        content: 'h_d = a\\!\\left[\\theta_{d0} + \\theta_{d1} x_1 + \\theta_{d2} x_2\\right]',
+        label: 'Éq. 3.9 — Unité cachée avec 2 entrées',
+      },
+      {
+        type: 'text',
+        content: `En 2D, le ReLU crée des **hyperplans** (droites) qui divisent le plan d'entrée en **régions convexes polygonales**. Chaque région a une surface linéaire différente.\n\n**Sorties multiples (Dₒ > 1)** : on utilise une combinaison linéaire **différente** des mêmes unités cachées pour chaque sortie. Les joints restent aux mêmes positions, mais les pentes varient.`,
+      },
+      {
+        type: 'text',
+        content: `**Nombre de régions en haute dimension** :\n\nAvec Dᵢ ≥ 2 et D unités cachées, le nombre maximum de régions est donné par la formule de Zaslavsky (1975) :`,
+      },
+      {
+        type: 'equation',
+        content: 'N_{\\text{regions}} = \\sum_{j=0}^{D_i} \\binom{D}{j}',
+        label: 'Formule de Zaslavsky — Nombre max de régions',
+      },
+      {
+        type: 'text',
+        content: `Avec Dᵢ dimensions et D ≥ Dᵢ unités cachées, on crée au minimum **2^Dᵢ** régions (en alignant chaque hyperplan avec un axe de coordonnées). Exemple : D = 500, Dᵢ = 100 → plus de **10¹⁰⁷** régions !`,
+      },
+
+      // ──────── SECTION 10 : TERMINOLOGIE ────────
+      {
+        type: 'text',
+        content: `## 3.6 — Terminologie\n\nLe réseau est décrit en **couches** (layers) :\n\n- **Input layer** (couche d'entrée) : les données x\n- **Hidden layer** (couche cachée) : les neurones hd avec ReLU\n- **Output layer** (couche de sortie) : la prédiction y\n\nAutres termes importants :`,
+      },
+      {
+        type: 'diagram',
+        content: `  ╔═══════════════════════════════════════════════════════════╗
+  ║                    VOCABULAIRE                            ║
+  ╠══════════════════╤════════════════════════════════════════╣
+  ║ Multi-layer      │ Tout réseau avec ≥ 1 couche cachée    ║
+  ║ perceptron (MLP) │ (terme historique)                    ║
+  ╟──────────────────┼────────────────────────────────────────╢
+  ║ Neurone / Unit   │ Un élément de la couche cachée        ║
+  ╟──────────────────┼────────────────────────────────────────╢
+  ║ Pré-activation   │ Valeur AVANT le ReLU : θ₀ + θ₁x      ║
+  ╟──────────────────┼────────────────────────────────────────╢
+  ║ Activation       │ Valeur APRÈS le ReLU : a[θ₀ + θ₁x]   ║
+  ╟──────────────────┼────────────────────────────────────────╢
+  ║ Weights (poids)  │ Paramètres de pente (θ₁₁, ϕ₁, …)     ║
+  ╟──────────────────┼────────────────────────────────────────╢
+  ║ Biases (biais)   │ Paramètres d'offset (θ₁₀, ϕ₀, …)     ║
+  ╟──────────────────┼────────────────────────────────────────╢
+  ║ Feed-forward     │ Graphe acyclique (pas de boucles)     ║
+  ╟──────────────────┼────────────────────────────────────────╢
+  ║ Fully connected  │ Chaque neurone connecté à tous les    ║
+  ║                  │ neurones de la couche suivante        ║
+  ╚══════════════════╧════════════════════════════════════════╝`,
+        label: 'Fig. 3.12 — Terminologie des réseaux de neurones',
+      },
+
+      // ──────── SECTION 11 : AUTRES ACTIVATIONS ────────
+      {
+        type: 'text',
+        content: `## 3.7 — Autres fonctions d'activation\n\nLe ReLU n'est pas la seule option. Voici les alternatives les plus importantes :`,
+      },
+      {
+        type: 'diagram',
+        content: `  ┌─────────────────┬───────────────────────────────────────┐
+  │ Activation      │ Formule                               │
+  ├─────────────────┼───────────────────────────────────────┤
+  │ Sigmoid σ(z)    │  1 / (1 + e⁻ᶻ)          ∈ (0, 1)     │
+  │ Tanh            │  (eᶻ - e⁻ᶻ)/(eᶻ + e⁻ᶻ)  ∈ (-1, 1)   │
+  │ Leaky ReLU      │  max(0.01z, z)                        │
+  │ Parametric ReLU │  max(αz, z)   α appris                │
+  │ ELU             │  z si z≥0, α(eᶻ-1) sinon             │
+  │ Swish / SiLU    │  z · σ(βz)    β appris                │
+  │ GELU            │  z · Φ(z)     Φ = CDF gaussienne      │
+  │ Softplus        │  log(1 + eᶻ)  version lisse du ReLU   │
+  └─────────────────┴───────────────────────────────────────┘`,
+        label: 'Fig. 3.13 — Catalogue des fonctions d\'activation',
+      },
+      {
+        type: 'text',
+        content: `**En PyTorch**, chaque activation est disponible en module :\n\n- \`nn.ReLU()\`, \`nn.LeakyReLU(0.01)\`, \`nn.ELU(alpha=1.0)\`\n- \`nn.Sigmoid()\`, \`nn.Tanh()\`, \`nn.SiLU()\` (= Swish)\n- \`nn.GELU()\`, \`nn.Softplus()\`\n- \`nn.PReLU()\` — le paramètre α est appris pendant l'entraînement`,
+      },
+
+      // ──────── SECTION 12 : RÉSUMÉ ────────
+      {
+        type: 'callout',
+        content: '⚡ **Résumé du Chapitre 3** :\n(1) Les réseaux superficiels calculent des fonctions linéaires par morceaux\n(2) Chaque unité cachée ajoute un "joint" et une région linéaire\n(3) Avec assez d\'unités, on approxime n\'importe quelle fonction continue\n(4) Le ReLU est l\'activation standard car son gradient est simple et stable\n(5) Le nombre de paramètres est D·(Dᵢ+1) + Dₒ·(D+1)',
       },
     ],
     exercises: [
+      // ═══════════════════════════════════════
+      // EXERCICE 1 — THÉORIQUE : Activation linéaire
+      // ═══════════════════════════════════════
       {
-        id: 'shallow-ex1',
-        title: 'Un réseau à une couche cachée',
-        instructions: 'Implémentez un réseau superficiel avec 3 unités cachées et activation ReLU. Calculez la sortie pour une entrée x = 1.5.',
+        id: 'shallow-th1',
+        title: '🧠 Théorie — Activation linéaire (Prob. 3.1)',
+        instructions: 'Problème 3.1 du livre : que se passe-t-il si la fonction d\'activation est **linéaire** a[z] = ψ₀ + ψ₁z au lieu de ReLU ? Prouvez-le en code : créez un réseau avec activation linéaire et montrez que le résultat est toujours une simple droite (fonction affine), quel que soit le nombre d\'unités cachées.',
         starterCode: `import torch
 
-def relu(z):
-    return ___
+# Activation linéaire : a[z] = psi_0 + psi_1 * z
+psi_0, psi_1 = 0.5, 2.0
+
+def linear_activation(z):
+    return psi_0 + psi_1 * z
 
 x = torch.tensor(1.5)
 
-# Paramètres de la couche cachée
-theta = torch.tensor([[0.5, -1.0],   # theta_10, theta_11
-                       [-0.3, 0.8],   # theta_20, theta_21
-                       [0.1, 1.2]])   # theta_30, theta_31
+# Paramètres couche cachée
+theta = torch.tensor([[0.5, -1.0],
+                       [-0.3, 0.8],
+                       [0.1, 1.2]])
 
-# Paramètres de sortie
-phi = torch.tensor([0.2, 0.5, -0.3, 0.7])  # phi_0, phi_1, phi_2, phi_3
+# Paramètres sortie
+phi = torch.tensor([0.2, 0.5, -0.3, 0.7])
 
-# Calcul des unités cachées
-h1 = relu(___)
-h2 = relu(___)
-h3 = relu(___)
+# Calculez h1, h2, h3 avec activation LINÉAIRE
+h1 = ___
+h2 = ___
+h3 = ___
 
 # Sortie
 y = ___
 
 print(f"h1={h1.item():.4f}, h2={h2.item():.4f}, h3={h3.item():.4f}")
-print(f"y = {y.item():.4f}")`,
+print(f"y = {y.item():.4f}")
+
+# Maintenant montrez que y = A*x + B (constantes)
+# Calculez A et B théoriquement
+A = psi_1 * (phi[1]*theta[0,1] + phi[2]*theta[1,1] + phi[3]*theta[2,1])
+B_offset = psi_0 * (phi[1] + phi[2] + phi[3])
+B_theta  = psi_1 * (phi[1]*theta[0,0] + phi[2]*theta[1,0] + phi[3]*theta[2,0])
+B = phi[0] + B_offset + B_theta
+
+print(f"\\nVérification : y = {A:.4f} * x + {B:.4f}")
+print(f"Calcul direct : {A * 1.5 + B:.4f}")
+print(f"Conclusion : avec activation linéaire, le réseau est juste une DROITE !")`,
+        solution: `import torch
+
+psi_0, psi_1 = 0.5, 2.0
+
+def linear_activation(z):
+    return psi_0 + psi_1 * z
+
+x = torch.tensor(1.5)
+
+theta = torch.tensor([[0.5, -1.0],
+                       [-0.3, 0.8],
+                       [0.1, 1.2]])
+
+phi = torch.tensor([0.2, 0.5, -0.3, 0.7])
+
+h1 = linear_activation(theta[0, 0] + theta[0, 1] * x)
+h2 = linear_activation(theta[1, 0] + theta[1, 1] * x)
+h3 = linear_activation(theta[2, 0] + theta[2, 1] * x)
+
+y = phi[0] + phi[1] * h1 + phi[2] * h2 + phi[3] * h3
+
+print(f"h1={h1.item():.4f}, h2={h2.item():.4f}, h3={h3.item():.4f}")
+print(f"y = {y.item():.4f}")
+
+A = psi_1 * (phi[1]*theta[0,1] + phi[2]*theta[1,1] + phi[3]*theta[2,1])
+B_offset = psi_0 * (phi[1] + phi[2] + phi[3])
+B_theta  = psi_1 * (phi[1]*theta[0,0] + phi[2]*theta[1,0] + phi[3]*theta[2,0])
+B = phi[0] + B_offset + B_theta
+
+print(f"\\nVérification : y = {A:.4f} * x + {B:.4f}")
+print(f"Calcul direct : {A * 1.5 + B:.4f}")
+print(f"Conclusion : avec activation linéaire, le réseau est juste une DROITE !")`,
+        hints: [
+          'h1 = linear_activation(theta[0,0] + theta[0,1] * x)',
+          'y = phi[0] + phi[1]*h1 + phi[2]*h2 + phi[3]*h3',
+          'Le résultat est toujours de la forme A·x + B, donc une droite !',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 2 — PRATIQUE : Forward pass ReLU
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-pr1',
+        title: '💻 Pratique — Forward pass avec ReLU',
+        instructions: 'Implémentez un réseau superficiel avec 3 unités cachées et activation ReLU. Calculez la sortie pour x = -1.0, 0.0, 0.5, 1.5 et identifiez les patterns d\'activation (quelles unités sont actives/inactives à chaque x).',
+        starterCode: `import torch
+
+def relu(z):
+    """ReLU : max(0, z)"""
+    return ___
+
+# Paramètres (tirés de la Figure 3.2a du livre)
+theta = torch.tensor([[-0.2, 0.4],   # θ₁₀, θ₁₁
+                       [-0.9, 0.9],   # θ₂₀, θ₂₁
+                       [ 1.1, -0.7]]) # θ₃₀, θ₃₁
+
+phi = torch.tensor([-0.23, -1.3, 1.3, 0.66])  # ϕ₀, ϕ₁, ϕ₂, ϕ₃
+
+def shallow_forward(x, theta, phi):
+    """Forward pass d'un réseau superficiel"""
+    # Pré-activations
+    z1 = ___
+    z2 = ___
+    z3 = ___
+    
+    # Activations (unités cachées)
+    h1 = relu(z1)
+    h2 = relu(z2)
+    h3 = relu(z3)
+    
+    # Sortie
+    y = ___
+    
+    # Pattern d'activation : 1 si actif, 0 si inactif
+    pattern = (f"h1={'ON' if h1 > 0 else 'off'}, "
+               f"h2={'ON' if h2 > 0 else 'off'}, "
+               f"h3={'ON' if h3 > 0 else 'off'}")
+    
+    return y.item(), pattern
+
+# Test sur plusieurs entrées
+for x_val in [-1.0, 0.0, 0.5, 1.0, 1.5, 2.5]:
+    x = torch.tensor(x_val)
+    y, pattern = shallow_forward(x, theta, phi)
+    print(f"x={x_val:+.1f} → y={y:.4f}  [{pattern}]")`,
+        solution: `import torch
+
+def relu(z):
+    """ReLU : max(0, z)"""
+    return torch.clamp(z, min=0)
+
+theta = torch.tensor([[-0.2, 0.4],
+                       [-0.9, 0.9],
+                       [ 1.1, -0.7]])
+
+phi = torch.tensor([-0.23, -1.3, 1.3, 0.66])
+
+def shallow_forward(x, theta, phi):
+    z1 = theta[0, 0] + theta[0, 1] * x
+    z2 = theta[1, 0] + theta[1, 1] * x
+    z3 = theta[2, 0] + theta[2, 1] * x
+    
+    h1 = relu(z1)
+    h2 = relu(z2)
+    h3 = relu(z3)
+    
+    y = phi[0] + phi[1] * h1 + phi[2] * h2 + phi[3] * h3
+    
+    pattern = (f"h1={'ON' if h1 > 0 else 'off'}, "
+               f"h2={'ON' if h2 > 0 else 'off'}, "
+               f"h3={'ON' if h3 > 0 else 'off'}")
+    
+    return y.item(), pattern
+
+for x_val in [-1.0, 0.0, 0.5, 1.0, 1.5, 2.5]:
+    x = torch.tensor(x_val)
+    y, pattern = shallow_forward(x, theta, phi)
+    print(f"x={x_val:+.1f} → y={y:.4f}  [{pattern}]")`,
+        hints: [
+          'relu(z) = torch.clamp(z, min=0)',
+          'z1 = theta[0, 0] + theta[0, 1] * x  (pré-activation)',
+          'y = phi[0] + phi[1]*h1 + phi[2]*h2 + phi[3]*h3',
+          'Un neurone est ON si sa pré-activation z > 0',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 3 — THÉORIQUE : Homogénéité du ReLU
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-th2',
+        title: '🧠 Théorie — Propriété du ReLU (Prob. 3.5)',
+        instructions: 'Problème 3.5 : prouvez numériquement que ReLU(α·z) = α·ReLU(z) pour tout α ≥ 0 (propriété d\'homogénéité non-négative). Puis montrez que cette propriété NE tient PAS pour α < 0. Testez avec différentes valeurs de z et α.',
+        starterCode: `import torch
+
+def relu(z):
+    return torch.clamp(z, min=0)
+
+# Testez la propriété : ReLU(α·z) == α·ReLU(z) pour α ≥ 0
+z_values = torch.tensor([-2.0, -1.0, 0.0, 1.0, 3.0])
+
+print("═══ α ≥ 0 : propriété VRAIE ═══")
+for alpha in [0.0, 0.5, 1.0, 2.0, 10.0]:
+    lhs = relu(alpha * z_values)   # ReLU(α·z)
+    rhs = alpha * relu(z_values)   # α·ReLU(z)
+    equal = torch.allclose(lhs, rhs)
+    print(f"  α={alpha:4.1f} : ReLU(αz) = {lhs.tolist()}")
+    print(f"          α·ReLU(z) = {rhs.tolist()} → {'✓ ÉGAL' if equal else '✗ DIFFÉRENT'}")
+
+print("\\n═══ α < 0 : propriété FAUSSE ═══")
+alpha = -1.0
+lhs = relu(alpha * z_values)
+rhs = alpha * relu(z_values)
+print(f"  α={alpha:4.1f} : ReLU(αz) = {lhs.tolist()}")
+print(f"          α·ReLU(z) = {rhs.tolist()}")
+print(f"  → {'✓ ÉGAL' if torch.allclose(lhs, rhs) else '✗ DIFFÉRENT'}")
+
+# Question bonus : pourquoi c'est important ?
+print("\\n💡 Conséquence (Prob 3.6) :")
+print("   Si on multiplie θ₁₀,θ₁₁ par α>0 et divise ϕ₁ par α,")
+print("   le réseau donne EXACTEMENT la même sortie.")
+print("   → Il y a une infinité de combinaisons de paramètres équivalentes !")`,
         solution: `import torch
 
 def relu(z):
     return torch.clamp(z, min=0)
 
-x = torch.tensor(1.5)
+z_values = torch.tensor([-2.0, -1.0, 0.0, 1.0, 3.0])
 
-# Paramètres de la couche cachée
-theta = torch.tensor([[0.5, -1.0],
-                       [-0.3, 0.8],
-                       [0.1, 1.2]])
+print("═══ α ≥ 0 : propriété VRAIE ═══")
+for alpha in [0.0, 0.5, 1.0, 2.0, 10.0]:
+    lhs = relu(alpha * z_values)
+    rhs = alpha * relu(z_values)
+    equal = torch.allclose(lhs, rhs)
+    print(f"  α={alpha:4.1f} : ReLU(αz) = {lhs.tolist()}")
+    print(f"          α·ReLU(z) = {rhs.tolist()} → {'✓ ÉGAL' if equal else '✗ DIFFÉRENT'}")
 
-# Paramètres de sortie
-phi = torch.tensor([0.2, 0.5, -0.3, 0.7])
+print("\\n═══ α < 0 : propriété FAUSSE ═══")
+alpha = -1.0
+lhs = relu(alpha * z_values)
+rhs = alpha * relu(z_values)
+print(f"  α={alpha:4.1f} : ReLU(αz) = {lhs.tolist()}")
+print(f"          α·ReLU(z) = {rhs.tolist()}")
+print(f"  → {'✓ ÉGAL' if torch.allclose(lhs, rhs) else '✗ DIFFÉRENT'}")
 
-# Calcul des unités cachées
-h1 = relu(theta[0, 0] + theta[0, 1] * x)
-h2 = relu(theta[1, 0] + theta[1, 1] * x)
-h3 = relu(theta[2, 0] + theta[2, 1] * x)
-
-# Sortie
-y = phi[0] + phi[1] * h1 + phi[2] * h2 + phi[3] * h3
-
-print(f"h1={h1.item():.4f}, h2={h2.item():.4f}, h3={h3.item():.4f}")
-print(f"y = {y.item():.4f}")`,
+print("\\n💡 Conséquence (Prob 3.6) :")
+print("   Si on multiplie θ₁₀,θ₁₁ par α>0 et divise ϕ₁ par α,")
+print("   le réseau donne EXACTEMENT la même sortie.")
+print("   → Il y a une infinité de combinaisons de paramètres équivalentes !")`,
         hints: [
-          'relu(z) = torch.clamp(z, min=0) ou torch.max(z, torch.tensor(0.0))',
-          'h1 = relu(theta[0,0] + theta[0,1] * x)',
-          'y = phi[0] + phi[1]*h1 + phi[2]*h2 + phi[3]*h3',
+          'Pour α ≥ 0 et z ≥ 0 : ReLU(α·z) = α·z = α·ReLU(z) ✓',
+          'Pour α ≥ 0 et z < 0 : ReLU(α·z) = 0 = α·0 = α·ReLU(z) ✓',
+          'Pour α < 0 et z > 0 : ReLU(α·z) = 0 ≠ α·z = α·ReLU(z) ✗',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 4 — PRATIQUE : nn.Sequential
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-pr2',
+        title: '💻 Pratique — Réseau PyTorch nn.Sequential',
+        instructions: 'Construisez un réseau superficiel avec `nn.Sequential` : 1 entrée, D=20 unités cachées, 1 sortie. Comptez les paramètres, puis passez un batch de 50 entrées à travers le réseau.',
+        starterCode: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+# Construisez le réseau superficiel
+D = 20  # unités cachées
+model = nn.Sequential(
+    ___,  # couche 1 : entrée → cachée
+    ___,  # activation ReLU
+    ___,  # couche 2 : cachée → sortie
+)
+
+# Comptez les paramètres
+n_params = ___
+print(f"Architecture: {model}")
+print(f"Paramètres: {n_params}")
+
+# Vérification théorique
+D_i, D_o = 1, 1
+n_theorique = D * (D_i + 1) + D_o * (D + 1)
+print(f"Formule: {D}×({D_i}+1) + {D_o}×({D}+1) = {n_theorique}")
+
+# Passez un batch de 50 entrées
+x = torch.linspace(-3, 3, 50).unsqueeze(1)  # (50, 1)
+y = model(x)  # forward pass
+
+print(f"\\nInput shape:  {x.shape}")
+print(f"Output shape: {y.shape}")
+print(f"Premières sorties: {y[:5].squeeze().tolist()}")
+
+# Inspectez les poids de la couche cachée
+W1 = model[0].weight  # matrice de poids
+b1 = model[0].bias    # vecteur de biais
+print(f"\\nPoids couche cachée: {W1.shape} → {W1.numel()} poids")
+print(f"Biais couche cachée: {b1.shape} → {b1.numel()} biais")`,
+        solution: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+D = 20
+model = nn.Sequential(
+    nn.Linear(1, D),   # couche 1 : entrée → cachée
+    nn.ReLU(),          # activation ReLU
+    nn.Linear(D, 1),   # couche 2 : cachée → sortie
+)
+
+n_params = sum(p.numel() for p in model.parameters())
+print(f"Architecture: {model}")
+print(f"Paramètres: {n_params}")
+
+D_i, D_o = 1, 1
+n_theorique = D * (D_i + 1) + D_o * (D + 1)
+print(f"Formule: {D}×({D_i}+1) + {D_o}×({D}+1) = {n_theorique}")
+
+x = torch.linspace(-3, 3, 50).unsqueeze(1)
+y = model(x)
+
+print(f"\\nInput shape:  {x.shape}")
+print(f"Output shape: {y.shape}")
+print(f"Premières sorties: {y[:5].squeeze().tolist()}")
+
+W1 = model[0].weight
+b1 = model[0].bias
+print(f"\\nPoids couche cachée: {W1.shape} → {W1.numel()} poids")
+print(f"Biais couche cachée: {b1.shape} → {b1.numel()} biais")`,
+        hints: [
+          'nn.Linear(1, D) pour la couche d\'entrée vers cachée',
+          'nn.ReLU() comme activation',
+          'nn.Linear(D, 1) pour la couche cachée vers sortie',
+          'sum(p.numel() for p in model.parameters()) pour le total',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 5 — THÉORIQUE : Compter les régions
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-th3',
+        title: '🧠 Théorie — Compter les régions linéaires (Prob. 3.18)',
+        instructions: 'Implémentez la formule de Zaslavsky pour calculer le nombre maximum de régions linéaires. Vérifiez que D=3 en 2D donne 7 régions (comme Fig. 3.8j). Explorez comment le nombre de régions explose en haute dimension.',
+        starterCode: `import math
+
+def binomial(n, k):
+    """Coefficient binomial C(n, k)"""
+    if k > n or k < 0:
+        return 0
+    return math.comb(n, k)
+
+def max_regions(D, D_i):
+    """
+    Nombre max de régions d'un shallow network
+    D : nombre d'unités cachées
+    D_i : dimension de l'entrée
+    Formule de Zaslavsky (1975)
+    """
+    total = ___  # Σ C(D, j) pour j = 0 à min(D, D_i)
+    return total
+
+# Vérifications du livre
+print("═══ Vérifications ═══")
+print(f"D=3, D_i=1 : {max_regions(3, 1)} régions (attendu: 4)")
+print(f"D=3, D_i=2 : {max_regions(3, 2)} régions (attendu: 7)")
+print(f"D=5, D_i=2 : {max_regions(5, 2)} régions (attendu: 16)")
+
+# Exploration
+print("\\n═══ Explosion combinatoire ═══")
+for D_i in [1, 2, 5, 10, 50, 100]:
+    D = max(D_i, 10)
+    r = max_regions(D, D_i)
+    print(f"D_i={D_i:3d}, D={D:3d} → {r:.2e} régions max")
+
+# Cas massif du livre
+D, D_i = 500, 100
+r = max_regions(D, D_i)
+print(f"\\nD=500, D_i=100 → ~10^{math.log10(r):.0f} régions !")`,
+        solution: `import math
+
+def binomial(n, k):
+    if k > n or k < 0:
+        return 0
+    return math.comb(n, k)
+
+def max_regions(D, D_i):
+    total = sum(binomial(D, j) for j in range(min(D, D_i) + 1))
+    return total
+
+print("═══ Vérifications ═══")
+print(f"D=3, D_i=1 : {max_regions(3, 1)} régions (attendu: 4)")
+print(f"D=3, D_i=2 : {max_regions(3, 2)} régions (attendu: 7)")
+print(f"D=5, D_i=2 : {max_regions(5, 2)} régions (attendu: 16)")
+
+print("\\n═══ Explosion combinatoire ═══")
+for D_i in [1, 2, 5, 10, 50, 100]:
+    D = max(D_i, 10)
+    r = max_regions(D, D_i)
+    print(f"D_i={D_i:3d}, D={D:3d} → {r:.2e} régions max")
+
+D, D_i = 500, 100
+r = max_regions(D, D_i)
+print(f"\\nD=500, D_i=100 → ~10^{math.log10(r):.0f} régions !")`,
+        hints: [
+          'La formule est : Σ C(D, j) pour j de 0 à min(D, D_i)',
+          'sum(binomial(D, j) for j in range(min(D, D_i) + 1))',
+          'Pour D_i=1 : C(D,0) + C(D,1) = 1 + D = D+1 ✓',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 6 — PRATIQUE : Entrainer un shallow network
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-pr3',
+        title: '💻 Pratique — Entraîner un shallow network',
+        instructions: 'Entraînez un réseau superficiel pour approximer la fonction sin(x) sur [-π, π]. Observez comment le nombre d\'unités cachées D affecte la qualité de l\'approximation.',
+        starterCode: `import torch
+import torch.nn as nn
+import torch.optim as optim
+import math
+
+torch.manual_seed(42)
+
+# Données : y = sin(x) sur [-π, π]
+x_train = torch.linspace(-math.pi, math.pi, 200).unsqueeze(1)
+y_train = torch.sin(x_train)
+
+def train_shallow(D, n_epochs=2000, lr=0.01):
+    """Entraîne un réseau superficiel avec D unités cachées"""
+    model = nn.Sequential(
+        ___,   # entrée → D unités
+        ___,   # ReLU
+        ___,   # D unités → sortie
+    )
+    
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.MSELoss()
+    
+    for epoch in range(n_epochs):
+        pred = model(x_train)
+        loss = loss_fn(pred, y_train)
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    
+    final_loss = loss_fn(model(x_train), y_train).item()
+    return model, final_loss
+
+# Comparer différentes capacités
+print("D (units)  │  Params  │  MSE Loss")
+print("───────────┼──────────┼──────────")
+for D in [3, 5, 10, 20, 50]:
+    model, loss = train_shallow(D)
+    n_params = sum(p.numel() for p in model.parameters())
+    print(f"  D={D:3d}     │  {n_params:5d}   │  {loss:.6f}")
+
+print("\\n→ Plus de hidden units = meilleure approximation de sin(x)")
+print("  Cela illustre le théorème d'approximation universelle !")`,
+        solution: `import torch
+import torch.nn as nn
+import torch.optim as optim
+import math
+
+torch.manual_seed(42)
+
+x_train = torch.linspace(-math.pi, math.pi, 200).unsqueeze(1)
+y_train = torch.sin(x_train)
+
+def train_shallow(D, n_epochs=2000, lr=0.01):
+    model = nn.Sequential(
+        nn.Linear(1, D),
+        nn.ReLU(),
+        nn.Linear(D, 1),
+    )
+    
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.MSELoss()
+    
+    for epoch in range(n_epochs):
+        pred = model(x_train)
+        loss = loss_fn(pred, y_train)
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    
+    final_loss = loss_fn(model(x_train), y_train).item()
+    return model, final_loss
+
+print("D (units)  │  Params  │  MSE Loss")
+print("───────────┼──────────┼──────────")
+for D in [3, 5, 10, 20, 50]:
+    model, loss = train_shallow(D)
+    n_params = sum(p.numel() for p in model.parameters())
+    print(f"  D={D:3d}     │  {n_params:5d}   │  {loss:.6f}")
+
+print("\\n→ Plus de hidden units = meilleure approximation de sin(x)")
+print("  Cela illustre le théorème d'approximation universelle !")`,
+        hints: [
+          'nn.Linear(1, D) pour la couche d\'entrée',
+          'nn.ReLU() pour l\'activation',
+          'nn.Linear(D, 1) pour la couche de sortie',
+          'Adam converge plus vite que SGD pour ce problème',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 7 — THÉORIQUE : Pentes des régions
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-th4',
+        title: '🧠 Théorie — Pentes des régions lin. (Prob. 3.3)',
+        instructions: 'Problème 3.3 : calculez les positions des joints et les pentes de chaque région linéaire. Montrez que la somme d\'une pente intermédiaire est la somme des pentes des unités actives dans cette région.',
+        starterCode: `import torch
+
+# Paramètres de la Figure 3.2a du livre
+theta = torch.tensor([[-0.2, 0.4],   # θ₁₀, θ₁₁
+                       [-0.9, 0.9],   # θ₂₀, θ₂₁
+                       [ 1.1, -0.7]]) # θ₃₀, θ₃₁
+
+phi = torch.tensor([-0.23, -1.3, 1.3, 0.66])
+
+# ── Positions des joints ──
+# Un joint est là où θ_{d0} + θ_{d1}·x = 0
+# Donc x_joint = -θ_{d0} / θ_{d1}
+joint1 = ___  # = -theta[0,0] / theta[0,1]
+joint2 = ___
+joint3 = ___
+
+print("═══ Positions des joints ═══")
+print(f"Joint 1 (h₁ s'active) : x = {joint1:.4f}")
+print(f"Joint 2 (h₂ s'active) : x = {joint2:.4f}")
+print(f"Joint 3 (h₃ s'active) : x = {joint3:.4f}")
+
+# Triez les joints pour identifier les régions
+joints = sorted([(joint1.item(), 1), (joint2.item(), 2), (joint3.item(), 3)])
+print(f"\\nJoints triés: {[(f'x={j:.2f}', f'h{i}') for j, i in joints]}")
+
+# ── Pentes des régions ──
+# La pente d'une région = Σ (ϕ_d · θ_{d1}) pour chaque unité d ACTIVE
+print("\\n═══ Pentes des régions ═══")
+print(f"ϕ₁·θ₁₁ = {phi[1]*theta[0,1]:.4f}")
+print(f"ϕ₂·θ₂₁ = {phi[2]*theta[1,1]:.4f}")
+print(f"ϕ₃·θ₃₁ = {phi[3]*theta[2,1]:.4f}")
+
+# Identifiez quelles unités sont actives dans chaque région
+# et calculez la pente correspondante`,
+        solution: `import torch
+
+theta = torch.tensor([[-0.2, 0.4],
+                       [-0.9, 0.9],
+                       [ 1.1, -0.7]])
+
+phi = torch.tensor([-0.23, -1.3, 1.3, 0.66])
+
+joint1 = -theta[0, 0] / theta[0, 1]
+joint2 = -theta[1, 0] / theta[1, 1]
+joint3 = -theta[2, 0] / theta[2, 1]
+
+print("═══ Positions des joints ═══")
+print(f"Joint 1 (h₁ s'active) : x = {joint1:.4f}")
+print(f"Joint 2 (h₂ s'active) : x = {joint2:.4f}")
+print(f"Joint 3 (h₃ s'active) : x = {joint3:.4f}")
+
+joints = sorted([(joint1.item(), 1), (joint2.item(), 2), (joint3.item(), 3)])
+print(f"\\nJoints triés: {[(f'x={j:.2f}', f'h{i}') for j, i in joints]}")
+
+print("\\n═══ Pentes des régions ═══")
+print(f"ϕ₁·θ₁₁ = {phi[1]*theta[0,1]:.4f}")
+print(f"ϕ₂·θ₂₁ = {phi[2]*theta[1,1]:.4f}")
+print(f"ϕ₃·θ₃₁ = {phi[3]*theta[2,1]:.4f}")`,
+        hints: [
+          'Le joint du neurone d est à x = -θ_{d0} / θ_{d1}',
+          'La pente dans une région = somme de ϕ_d · θ_{d1} pour les neurones actifs',
+          'joint1 = -theta[0, 0] / theta[0, 1]',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 8 — PRATIQUE : Comparer les activations
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-pr4',
+        title: '💻 Pratique — Comparer ReLU, Sigmoid, Tanh, GELU',
+        instructions: 'Créez 4 réseaux superficiels identiques (D=10) mais avec des activations différentes : ReLU, Sigmoid, Tanh, GELU. Entraînez-les sur y=sin(x) et comparez les pertes finales.',
+        starterCode: `import torch
+import torch.nn as nn
+import torch.optim as optim
+import math
+
+torch.manual_seed(0)
+
+# Données
+x = torch.linspace(-math.pi, math.pi, 200).unsqueeze(1)
+y = torch.sin(x)
+
+D = 10  # unités cachées
+
+# Dictionnaire des activations à tester
+activations = {
+    'ReLU':    ___,
+    'Sigmoid': ___,
+    'Tanh':    ___,
+    'GELU':    ___,
+}
+
+results = {}
+
+for name, act_fn in activations.items():
+    torch.manual_seed(0)  # même init pour comparaison juste
+    
+    model = nn.Sequential(
+        nn.Linear(1, D),
+        act_fn,
+        nn.Linear(D, 1)
+    )
+    
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
+    loss_fn = nn.MSELoss()
+    
+    for epoch in range(1000):
+        pred = model(x)
+        loss = loss_fn(pred, y)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    
+    final_loss = loss.item()
+    results[name] = final_loss
+
+# Affichage
+print("═══ Comparaison des activations (D=10, 1000 epochs) ═══")
+print(f"{'Activation':<12} │ {'MSE Loss':>10}")
+print(f"{'─'*12}─┼─{'─'*10}")
+for name, loss in sorted(results.items(), key=lambda x: x[1]):
+    bar = '█' * int(min(50, 50 * (1 - loss/max(results.values()))))
+    print(f"{name:<12} │ {loss:10.6f}  {bar}")`,
+        solution: `import torch
+import torch.nn as nn
+import torch.optim as optim
+import math
+
+torch.manual_seed(0)
+
+x = torch.linspace(-math.pi, math.pi, 200).unsqueeze(1)
+y = torch.sin(x)
+
+D = 10
+
+activations = {
+    'ReLU':    nn.ReLU(),
+    'Sigmoid': nn.Sigmoid(),
+    'Tanh':    nn.Tanh(),
+    'GELU':    nn.GELU(),
+}
+
+results = {}
+
+for name, act_fn in activations.items():
+    torch.manual_seed(0)
+    
+    model = nn.Sequential(
+        nn.Linear(1, D),
+        act_fn,
+        nn.Linear(D, 1)
+    )
+    
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
+    loss_fn = nn.MSELoss()
+    
+    for epoch in range(1000):
+        pred = model(x)
+        loss = loss_fn(pred, y)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    
+    final_loss = loss.item()
+    results[name] = final_loss
+
+print("═══ Comparaison des activations (D=10, 1000 epochs) ═══")
+print(f"{'Activation':<12} │ {'MSE Loss':>10}")
+print(f"{'─'*12}─┼─{'─'*10}")
+for name, loss in sorted(results.items(), key=lambda x: x[1]):
+    bar = '█' * int(min(50, 50 * (1 - loss/max(results.values()))))
+    print(f"{name:<12} │ {loss:10.6f}  {bar}")`,
+        hints: [
+          'nn.ReLU(), nn.Sigmoid(), nn.Tanh(), nn.GELU()',
+          'Utilisez torch.manual_seed(0) avant chaque modèle pour la reproductibilité',
+          'GELU et Tanh tendent à mieux approximer les fonctions lisses que ReLU',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 9 — PRATIQUE : nn.Module personnalisé
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-pr5',
+        title: '💻 Pratique — nn.Module personnalisé',
+        instructions: 'Implémentez un réseau superficiel en tant que classe `nn.Module` personnalisée (pas `nn.Sequential`). Ajoutez une méthode `count_params()` et une méthode `get_activation_pattern(x)` qui retourne quelles unités sont actives.',
+        starterCode: `import torch
+import torch.nn as nn
+
+class ShallowNetwork(nn.Module):
+    def __init__(self, D_i, D, D_o):
+        super().__init__()
+        self.hidden = ___     # nn.Linear(D_i, D)
+        self.output = ___     # nn.Linear(D, D_o)
+        self.relu = nn.ReLU()
+    
+    def forward(self, x):
+        """Forward pass : x → ReLU(Wx+b) → sortie"""
+        h = ___   # couche cachée + activation
+        y = ___   # couche de sortie
+        return y
+    
+    def count_params(self):
+        """Retourne le nombre total de paramètres"""
+        return ___
+    
+    def get_activation_pattern(self, x):
+        """Retourne un tenseur binaire (1=actif, 0=inactif)"""
+        pre_act = self.hidden(x)       # pré-activations
+        pattern = (pre_act > 0).int()  # 1 si actif, 0 sinon
+        return pattern
+
+# Créez et testez le réseau
+model = ShallowNetwork(D_i=2, D=5, D_o=1)
+
+print(f"Architecture: {model}")
+print(f"Paramètres: {model.count_params()}")
+
+# Test
+x = torch.tensor([[1.0, -0.5]])
+y = model(x)
+pattern = model.get_activation_pattern(x)
+
+print(f"\\nEntrée:  {x.tolist()}")
+print(f"Sortie:  {y.item():.4f}")
+print(f"Pattern: {pattern.tolist()[0]} (1=ON, 0=off)")
+print(f"Unités actives: {pattern.sum().item()}/{model.hidden.out_features}")`,
+        solution: `import torch
+import torch.nn as nn
+
+class ShallowNetwork(nn.Module):
+    def __init__(self, D_i, D, D_o):
+        super().__init__()
+        self.hidden = nn.Linear(D_i, D)
+        self.output = nn.Linear(D, D_o)
+        self.relu = nn.ReLU()
+    
+    def forward(self, x):
+        h = self.relu(self.hidden(x))
+        y = self.output(h)
+        return y
+    
+    def count_params(self):
+        return sum(p.numel() for p in self.parameters())
+    
+    def get_activation_pattern(self, x):
+        pre_act = self.hidden(x)
+        pattern = (pre_act > 0).int()
+        return pattern
+
+model = ShallowNetwork(D_i=2, D=5, D_o=1)
+
+print(f"Architecture: {model}")
+print(f"Paramètres: {model.count_params()}")
+
+x = torch.tensor([[1.0, -0.5]])
+y = model(x)
+pattern = model.get_activation_pattern(x)
+
+print(f"\\nEntrée:  {x.tolist()}")
+print(f"Sortie:  {y.item():.4f}")
+print(f"Pattern: {pattern.tolist()[0]} (1=ON, 0=off)")
+print(f"Unités actives: {pattern.sum().item()}/{model.hidden.out_features}")`,
+        hints: [
+          'self.hidden = nn.Linear(D_i, D)',
+          'h = self.relu(self.hidden(x)) — appliquer ReLU aux pré-activations',
+          'count_params: sum(p.numel() for p in self.parameters())',
+        ],
+        completed: false,
+      },
+
+      // ═══════════════════════════════════════
+      // EXERCICE 10 — THÉORIQUE : Unicité de la solution
+      // ═══════════════════════════════════════
+      {
+        id: 'shallow-th5',
+        title: '🧠 Théorie — Unicité de la solution (Prob. 3.7)',
+        instructions: 'Problème 3.7 : la perte des moindres carrés a-t-elle un minimum unique ? Montrez qu\'il existe une infinité de combinaisons de paramètres qui donnent exactement la même fonction (même perte). Démontrez-le en construisant 2 réseaux avec des paramètres différents mais la même sortie.',
+        starterCode: `import torch
+
+def relu(z):
+    return torch.clamp(z, min=0)
+
+def shallow_net(x, theta, phi):
+    h1 = relu(theta[0,0] + theta[0,1] * x)
+    h2 = relu(theta[1,0] + theta[1,1] * x)
+    h3 = relu(theta[2,0] + theta[2,1] * x)
+    return phi[0] + phi[1]*h1 + phi[2]*h2 + phi[3]*h3
+
+# Réseau A — paramètres originaux
+theta_A = torch.tensor([[-0.2, 0.4], [-0.9, 0.9], [1.1, -0.7]])
+phi_A   = torch.tensor([-0.23, -1.3, 1.3, 0.66])
+
+# Réseau B — MÊMES résultats mais paramètres DIFFÉRENTS
+# Astuce 1 : multiplier θ₁ par α et diviser ϕ₁ par α (Prob. 3.6)
+alpha = 2.0
+theta_B = theta_A.clone()
+theta_B[0] = theta_A[0] * alpha  # multiplie θ₁₀, θ₁₁ par α
+phi_B = phi_A.clone()
+phi_B[1] = phi_A[1] / alpha      # divise ϕ₁ par α
+
+# Astuce 2 : permuter les unités cachées (h₁ ↔ h₂)
+theta_C = torch.tensor([[-0.9, 0.9], [-0.2, 0.4], [1.1, -0.7]])  # permutation
+phi_C   = torch.tensor([-0.23, 1.3, -1.3, 0.66])  # ϕ₁ ↔ ϕ₂ échangés
+
+# Vérification
+x_test = torch.linspace(-2, 3, 10)
+print("   x    │   Net A   │   Net B   │   Net C   │  B=A?  C=A?")
+print("────────┼───────────┼───────────┼───────────┼────────────")
+for x in x_test:
+    yA = shallow_net(x, theta_A, phi_A).item()
+    yB = shallow_net(x, theta_B, phi_B).item()
+    yC = shallow_net(x, theta_C, phi_C).item()
+    eq_B = "✓" if abs(yA - yB) < 1e-5 else "✗"
+    eq_C = "✓" if abs(yA - yC) < 1e-5 else "✗"
+    print(f"  {x:+.2f}  │  {yA:+.4f}  │  {yB:+.4f}  │  {yC:+.4f}  │  {eq_B}     {eq_C}")
+
+print("\\n💡 Conclusion : le minimum de la perte N'EST PAS unique !")
+print("   → Il existe des symétries : scaling (×α) et permutation.")
+print("   → Le paysage de perte a une infinité de minima globaux équivalents.")`,
+        solution: `import torch
+
+def relu(z):
+    return torch.clamp(z, min=0)
+
+def shallow_net(x, theta, phi):
+    h1 = relu(theta[0,0] + theta[0,1] * x)
+    h2 = relu(theta[1,0] + theta[1,1] * x)
+    h3 = relu(theta[2,0] + theta[2,1] * x)
+    return phi[0] + phi[1]*h1 + phi[2]*h2 + phi[3]*h3
+
+theta_A = torch.tensor([[-0.2, 0.4], [-0.9, 0.9], [1.1, -0.7]])
+phi_A   = torch.tensor([-0.23, -1.3, 1.3, 0.66])
+
+alpha = 2.0
+theta_B = theta_A.clone()
+theta_B[0] = theta_A[0] * alpha
+phi_B = phi_A.clone()
+phi_B[1] = phi_A[1] / alpha
+
+theta_C = torch.tensor([[-0.9, 0.9], [-0.2, 0.4], [1.1, -0.7]])
+phi_C   = torch.tensor([-0.23, 1.3, -1.3, 0.66])
+
+x_test = torch.linspace(-2, 3, 10)
+print("   x    │   Net A   │   Net B   │   Net C   │  B=A?  C=A?")
+print("────────┼───────────┼───────────┼───────────┼────────────")
+for x in x_test:
+    yA = shallow_net(x, theta_A, phi_A).item()
+    yB = shallow_net(x, theta_B, phi_B).item()
+    yC = shallow_net(x, theta_C, phi_C).item()
+    eq_B = "✓" if abs(yA - yB) < 1e-5 else "✗"
+    eq_C = "✓" if abs(yA - yC) < 1e-5 else "✗"
+    print(f"  {x:+.2f}  │  {yA:+.4f}  │  {yB:+.4f}  │  {yC:+.4f}  │  {eq_B}     {eq_C}")
+
+print("\\n💡 Conclusion : le minimum de la perte N'EST PAS unique !")
+print("   → Il existe des symétries : scaling (×α) et permutation.")
+print("   → Le paysage de perte a une infinité de minima globaux équivalents.")`,
+        hints: [
+          'Par homogénéité du ReLU : ReLU(α·z) = α·ReLU(z) pour α > 0',
+          'Donc (α·θ) passé par ReLU puis (ϕ/α) = même résultat',
+          'Permuter les unités cachées revient à réarranger les indices',
         ],
         completed: false,
       },
@@ -438,42 +1514,75 @@ print(f"y = {y.item():.4f}")`,
     codeTemplate: `import torch
 import torch.nn as nn
 
-# ══ Réseau Superficiel (Shallow Network) ══
-# Implémentation selon le livre "Understanding Deep Learning"
+# ══════════════════════════════════════════════════════════════
+# Réseaux Superficiels — Ch. 3 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
-def shallow_network(x, theta, phi):
+# ── 1. Implémentation manuelle (Éq. 3.1) ──
+def shallow_network_manual(x, theta, phi):
     """
-    Réseau à 1 couche cachée avec 3 unités + ReLU
-    x: entrée scalaire
-    theta: paramètres couche cachée (3x2)
-    phi: paramètres sortie (4,)
-    """
-    # Unités cachées avec ReLU
-    h1 = torch.relu(theta[0, 0] + theta[0, 1] * x)
-    h2 = torch.relu(theta[1, 0] + theta[1, 1] * x)
-    h3 = torch.relu(theta[2, 0] + theta[2, 1] * x)
+    Réseau superficiel : y = ϕ₀ + Σ ϕd · ReLU(θd₀ + θd₁·x)
     
-    # Combinaison linéaire
-    y = phi[0] + phi[1] * h1 + phi[2] * h2 + phi[3] * h3
-    return y
+    x:     entrée scalaire (tensor)
+    theta: paramètres couche cachée — shape (D, 2)
+           theta[d, 0] = biais,  theta[d, 1] = pente
+    phi:   paramètres de sortie — shape (D+1,)
+           phi[0] = offset, phi[1:] = poids de recombinaison
+    """
+    D = theta.shape[0]
+    
+    # Pré-activations : z_d = θ_{d0} + θ_{d1}·x
+    z = theta[:, 0] + theta[:, 1] * x
+    
+    # Activations : h_d = ReLU(z_d)
+    h = torch.relu(z)
+    
+    # Sortie : y = ϕ₀ + Σ ϕ_d · h_d
+    y = phi[0] + torch.sum(phi[1:] * h)
+    
+    return y, z, h
 
-# Paramètres
-theta = torch.tensor([[0.5, -1.0], [-0.3, 0.8], [0.1, 1.2]])
-phi = torch.tensor([0.2, 0.5, -0.3, 0.7])
+# Paramètres du livre (Figure 3.2a)
+theta = torch.tensor([[-0.2, 0.4],
+                       [-0.9, 0.9],
+                       [ 1.1, -0.7]])
+phi = torch.tensor([-0.23, -1.3, 1.3, 0.66])
 
-# Test sur plusieurs entrées
-for x_val in [-2.0, -1.0, 0.0, 1.0, 2.0]:
+print("── Forward pass manuel ──")
+for x_val in [-1.5, 0.0, 0.5, 1.0, 2.0]:
     x = torch.tensor(x_val)
-    y = shallow_network(x, theta, phi)
-    print(f"f({x_val:+.1f}) = {y.item():.4f}")
+    y, z, h = shallow_network_manual(x, theta, phi)
+    active = ["ON" if hi > 0 else "off" for hi in h]
+    print(f"x={x_val:+.1f} → y={y:.4f}  pattern=[{', '.join(active)}]")
 
-# ── Avec PyTorch nn.Module ──
+# ── 2. Même réseau avec PyTorch nn.Module ──
+print("\\n── Réseau PyTorch nn.Sequential ──")
+
+# Initialiser avec les MÊMES paramètres
 model = nn.Sequential(
-    nn.Linear(1, 10),    # 10 hidden units
+    nn.Linear(1, 3),  # couche cachée
     nn.ReLU(),
-    nn.Linear(10, 1)
+    nn.Linear(3, 1),  # couche de sortie
 )
-print(f"\\nParamètres: {sum(p.numel() for p in model.parameters())}")
+
+# Copier nos paramètres dans le modèle PyTorch
+with torch.no_grad():
+    model[0].weight.copy_(theta[:, 1:])  # pentes
+    model[0].bias.copy_(theta[:, 0])     # biais
+    model[2].weight.copy_(phi[1:].unsqueeze(0))
+    model[2].bias.copy_(phi[:1])
+
+for x_val in [-1.5, 0.0, 0.5, 1.0, 2.0]:
+    x = torch.tensor([[x_val]])
+    y = model(x)
+    print(f"x={x_val:+.1f} → y={y.item():.4f}")
+
+# ── 3. Comptage de paramètres ──
+print(f"\\n── Paramètres ──")
+for name, param in model.named_parameters():
+    print(f"  {name}: {param.shape} = {param.numel()} params")
+print(f"  Total: {sum(p.numel() for p in model.parameters())}")
+print(f"  Formule: D(D_i+1) + D_o(D+1) = 3(1+1) + 1(3+1) = 10 ✓")
 `,
   },
 

@@ -76,6 +76,34 @@
   font-size: 18px;
 }
 
+/* ── Inline Diagram (ASCII art) ── */
+.inlineDiagram {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  overflow-x: auto;
+}
+
+.diagramLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.diagramPre {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--cyan);
+  white-space: pre;
+  margin: 0;
+}
+
 /* ── Callout ── */
 .callout {
   display: flex;

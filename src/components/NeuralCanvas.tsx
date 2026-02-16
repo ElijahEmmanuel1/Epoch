@@ -82,6 +82,13 @@ function TheoryView({
             </div>
           )}
 
+          {block.type === 'diagram' && (
+            <div className={styles.inlineDiagram}>
+              {block.label && <span className={styles.diagramLabel}>{block.label}</span>}
+              <pre className={styles.diagramPre}>{block.content}</pre>
+            </div>
+          )}
+
           {block.type === 'callout' && (
             <div className={styles.callout}>
               <div className={styles.calloutIcon}>
