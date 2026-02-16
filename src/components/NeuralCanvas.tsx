@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import 'katex/dist/katex.min.css'
 import { BlockMath } from 'react-katex'
 import { Lightbulb, AlertTriangle, Info, HelpCircle } from 'lucide-react'
-import type { CourseNode, Exercise } from '../data/courses'
+import type { CourseNode, Exercise, TheoryBlock } from '../data/courses'
 import NeuralDiagram from './NeuralDiagram'
 import styles from './NeuralCanvas.module.css'
 
