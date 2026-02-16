@@ -14,25 +14,36 @@ interface NeuronLayer {
 }
 
 const diagrams: Record<string, NeuronLayer[]> = {
+  'supervised-learning': [
+    { label: 'Input x', count: 2, color: 'var(--cyan)', varName: 'x' },
+    { label: 'f[x,ϕ]', count: 1, color: 'var(--magenta)', varName: 'y' },
+    { label: 'Loss L', count: 1, color: 'var(--orange)', varName: 'loss' },
+  ],
   tensors: [
     { label: 'Scalaire', count: 1, color: 'var(--cyan)' },
     { label: 'Vecteur', count: 3, color: 'var(--magenta)' },
-    { label: 'Matrice', count: 4, color: 'var(--orange)' },
+    { label: 'Matrice', count: 4, color: 'var(--orange)', varName: 'result' },
   ],
-  perceptron: [
-    { label: 'Inputs x', count: 3, color: 'var(--cyan)', varName: 'x' },
-    { label: 'Σ + b', count: 1, color: 'var(--magenta)', varName: 'z' },
-    { label: 'σ(z)', count: 1, color: 'var(--green)', varName: 'output' },
+  'shallow-networks': [
+    { label: 'Input x', count: 1, color: 'var(--cyan)', varName: 'x' },
+    { label: 'ReLU h', count: 3, color: 'var(--magenta)', varName: 'relu' },
+    { label: 'Output y', count: 1, color: 'var(--green)', varName: 'output' },
   ],
-  'dense-network': [
-    { label: 'Input', count: 4, color: 'var(--cyan)' },
-    { label: 'Hidden 1', count: 3, color: 'var(--magenta)', varName: 'hidden' },
-    { label: 'Hidden 2', count: 3, color: 'var(--magenta)', varName: 'hidden' },
+  'deep-networks': [
+    { label: 'Input', count: 3, color: 'var(--cyan)' },
+    { label: 'h₁', count: 4, color: 'var(--magenta)', varName: 'hidden' },
+    { label: 'h₂', count: 4, color: 'var(--magenta)', varName: 'hidden' },
+    { label: 'h₃', count: 4, color: 'var(--magenta)', varName: 'hidden' },
     { label: 'Output', count: 2, color: 'var(--green)' },
   ],
   'loss-functions': [
     { label: 'Prediction ŷ', count: 3, color: 'var(--cyan)' },
     { label: 'Loss L', count: 1, color: 'var(--orange)', varName: 'loss' },
+  ],
+  'gradient-descent': [
+    { label: 'ϕ_t', count: 2, color: 'var(--magenta)' },
+    { label: 'α·∇L', count: 2, color: 'var(--orange)', varName: 'grad' },
+    { label: 'ϕ_{t+1}', count: 2, color: 'var(--green)' },
   ],
   backprop: [
     { label: 'Input', count: 2, color: 'var(--cyan)' },
@@ -40,16 +51,22 @@ const diagrams: Record<string, NeuronLayer[]> = {
     { label: 'Output', count: 1, color: 'var(--green)' },
     { label: '∇ Loss', count: 1, color: 'var(--orange)', varName: 'grad' },
   ],
-  optimizers: [
-    { label: 'w_t', count: 2, color: 'var(--magenta)' },
-    { label: 'η·∇L', count: 2, color: 'var(--orange)' },
-    { label: 'w_{t+1}', count: 2, color: 'var(--green)' },
+  regularization: [
+    { label: 'Input', count: 3, color: 'var(--cyan)' },
+    { label: 'Dropout', count: 4, color: 'var(--magenta)' },
+    { label: 'Output', count: 2, color: 'var(--green)' },
   ],
   cnn: [
     { label: 'Input', count: 4, color: 'var(--cyan)' },
     { label: 'Conv', count: 3, color: 'var(--magenta)' },
     { label: 'Pool', count: 2, color: 'var(--orange)' },
     { label: 'FC', count: 2, color: 'var(--green)' },
+  ],
+  resnet: [
+    { label: 'Input', count: 3, color: 'var(--cyan)' },
+    { label: 'Conv', count: 3, color: 'var(--magenta)', varName: 'hidden' },
+    { label: '+Skip', count: 3, color: 'var(--orange)', varName: 'hidden' },
+    { label: 'Output', count: 2, color: 'var(--green)' },
   ],
   rnn: [
     { label: 'x_t', count: 2, color: 'var(--cyan)' },
@@ -62,10 +79,21 @@ const diagrams: Record<string, NeuronLayer[]> = {
     { label: 'V', count: 3, color: 'var(--orange)' },
     { label: 'Attn', count: 3, color: 'var(--green)' },
   ],
+  gan: [
+    { label: 'Noise z', count: 2, color: 'var(--cyan)' },
+    { label: 'G(z)', count: 3, color: 'var(--magenta)' },
+    { label: 'D(x)', count: 1, color: 'var(--orange)' },
+  ],
+  diffusion: [
+    { label: 'x₀', count: 3, color: 'var(--cyan)' },
+    { label: '→ noise', count: 3, color: 'var(--magenta)' },
+    { label: 'denoise', count: 3, color: 'var(--orange)' },
+    { label: 'x̂₀', count: 3, color: 'var(--green)' },
+  ],
 }
 
 export default function NeuralDiagram({ courseId, highlightedVar }: Props) {
-  const layers = diagrams[courseId] || diagrams['perceptron']
+  const layers = diagrams[courseId] || diagrams['supervised-learning']
   const svgWidth = 420
   const svgHeight = 180
   const layerGap = svgWidth / (layers.length + 1)
