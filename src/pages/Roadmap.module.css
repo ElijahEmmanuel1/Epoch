@@ -1,0 +1,189 @@
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-deep);
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-void);
+  flex-shrink: 0;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--cyan), var(--magenta));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.progressCircle {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.progressCircle svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progressText {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+/* ── Graph ── */
+.graph {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+  padding: 40px;
+  min-height: 600px;
+}
+
+.edgesSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Node ── */
+.node {
+  position: absolute;
+  width: 180px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  z-index: 1;
+  overflow: hidden;
+  transition: border-color 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+}
+
+.node:hover {
+  border-color: var(--border-active);
+}
+
+.node.locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.node.available:hover,
+.node.in-progress:hover {
+  box-shadow: 0 8px 32px rgba(0, 229, 255, 0.1);
+  border-color: var(--cyan-dim);
+}
+
+.node.completed {
+  border-color: var(--green-dim);
+}
+
+.node.in-progress {
+  border-color: var(--cyan-dim);
+  animation: pulse-glow 3s infinite;
+}
+
+.nodeGlow {
+  height: 3px;
+  width: 100%;
+  opacity: 0.8;
+}
+
+.nodeContent {
+  padding: 14px;
+}
+
+.nodeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.nodeStatus {
+  display: flex;
+  align-items: center;
+}
+
+.nodeCategory {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.nodeTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.nodeDesc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.nodeProgress {
+  margin-top: 4px;
+}
+
+.nodeProgressBar {
+  height: 3px;
+  background: var(--bg-panel);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.nodeProgressFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s var(--ease-out);
+}
