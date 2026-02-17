@@ -11,45 +11,70 @@ const navigation = [
 
 export function Sidebar({ className }: { className?: string }) {
     return (
-        <div className={cn("pb-12 min-h-screen w-64 border-r bg-background", className)}>
-            <div className="space-y-4 py-4">
-                <div className="px-3 py-2">
-                    <Link href="/" className="mb-2 px-4 text-xl font-bold tracking-tight flex items-center">
-                        Epoch
-                    </Link>
-                    <div className="space-y-1 mt-4">
-                        {navigation.map((item) => (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors"
-                            >
-                                <item.icon className="h-4 w-4" />
-                                {item.name}
-                            </Link>
-                        ))}
+        <div className={cn("glass border-r border-white/5 w-64 min-h-screen flex flex-col sticky top-0", className)}>
+            <div className="p-6 border-b border-white/5">
+                <Link href="/" className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded bg-zinc-100 flex items-center justify-center">
+                        <span className="text-zinc-900 font-bold text-xs">E</span>
+                    </div>
+                    <span className="font-bold text-sm tracking-tight text-zinc-100">Epoch</span>
+                </Link>
+            </div>
+
+            <div className="flex-1 py-6 px-3 space-y-6 overflow-y-auto">
+
+                {/* Main Navigation */}
+                <div className="space-y-1">
+                    {navigation.map((item) => (
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg hover:bg-white/5 hover:text-zinc-100 transition-all group"
+                        >
+                            <item.icon className="h-4 w-4 text-zinc-500 group-hover:text-zinc-100 transition-colors" />
+                            {item.name}
+                        </Link>
+                    ))}
+                </div>
+
+                {/* Detailed Syllabus */}
+                <div>
+                    <h3 className="px-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                        Syllabus
+                    </h3>
+                    <div className="space-y-0.5">
+                        <SidebarItem href="/chapter/1" number="01" title="Introduction" />
+                        <SidebarItem href="/chapter/2" number="02" title="Linear Regression" />
+                        <SidebarItem href="/chapter/3" number="03" title="Shallow Nets" />
+                        <SidebarItem href="/chapter/4" number="04" title="Deep Nets" />
                     </div>
                 </div>
-                <div className="px-3 py-2">
-                    <h2 className="mb-2 px-4 text-xs font-semibold tracking-tight text-muted-foreground uppercase">
-                        Modules
-                    </h2>
-                    <div className="space-y-1">
-                        <Link href="/chapter/1" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors">
-                            1. Introduction
-                        </Link>
-                        <Link href="/chapter/2" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors">
-                            2. Linear Regression
-                        </Link>
-                        <Link href="/chapter/3" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors">
-                            3. Shallow Nets
-                        </Link>
-                        <Link href="/chapter/4" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors">
-                            4. Deep Nets
-                        </Link>
+            </div>
+
+            {/* User / Footer */}
+            <div className="p-4 border-t border-white/5">
+                <div className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5">
+                    <div className="h-8 w-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xs font-bold">
+                        US
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <p className="text-xs font-medium text-zinc-200 truncate">User Account</p>
+                        <p className="text-[10px] text-zinc-500 truncate">Pro Plan</p>
                     </div>
                 </div>
             </div>
         </div>
     );
+}
+
+function SidebarItem({ href, number, title }: { href: string; number: string; title: string }) {
+    return (
+        <Link
+            href={href}
+            className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-500 rounded-lg hover:bg-white/5 hover:text-zinc-200 transition-colors group"
+        >
+            <span className="text-[10px] font-mono text-zinc-700 group-hover:text-zinc-500 transition-colors">{number}</span>
+            <span className="truncate">{title}</span>
+        </Link>
+    )
 }

@@ -3,44 +3,61 @@
 @theme {
   --font-sans: var(--font-noto-sans);
   --font-serif: var(--font-noto-serif);
-  
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  
+
   --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #09090b; /* Zinc 950 */
-  
-  --primary: #18181b; /* Zinc 900 */
-  --primary-foreground: #fafafa; /* Zinc 50 */
-  
-  --muted: #f4f4f5; /* Zinc 100 */
-  --muted-foreground: #71717a; /* Zinc 500 */
-  
-  --border: #e4e4e7; /* Zinc 200 */
+  /* Default to Dark Mode for the Premium Look */
+  --background: #09090b;
+  /* Zinc 950 */
+  --foreground: #fafafa;
+  /* Zinc 50 */
+
+  --primary: #fafafa;
+  /* Zinc 50 */
+  --primary-foreground: #18181b;
+  /* Zinc 900 */
+
+  --muted: #27272a;
+  /* Zinc 800 */
+  --muted-foreground: #a1a1aa;
+  /* Zinc 400 */
+
+  --border: #27272a;
+  /* Zinc 800 */
+
+  --card: #18181b;
+  /* Zinc 900 */
+  --card-foreground: #fafafa;
+  /* Zinc 50 */
 }
 
-@media (prefers-color-scheme: dark) {
+/* Optional: Light mode override if user system is light, but default is dark per request */
+@media (prefers-color-scheme: light) {
+
+  /* Keeping light mode available but optimizing for dark */
   :root {
-    --background: #09090b; /* Zinc 950 */
-    --foreground: #fafafa; /* Zinc 50 */
-    
-    --primary: #fafafa; /* Zinc 50 */
-    --primary-foreground: #18181b; /* Zinc 900 */
-    
-    --muted: #27272a; /* Zinc 800 */
-    --muted-foreground: #a1a1aa; /* Zinc 400 */
-    
-    --border: #27272a; /* Zinc 800 */
+    --background: #ffffff;
+    --foreground: #09090b;
+    --primary: #18181b;
+    --primary-foreground: #fafafa;
+    --muted: #f4f4f5;
+    --muted-foreground: #71717a;
+    --border: #e4e4e7;
+    --card: #ffffff;
+    --card-foreground: #09090b;
   }
 }
 
@@ -52,11 +69,31 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-sans), sans-serif;
   letter-spacing: -0.02em;
 }
 
-p, li, blockquote {
+p,
+li,
+blockquote {
   font-family: var(--font-serif), serif;
+}
+
+/* Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #fff, #a1a1aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
