@@ -3,9 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Slider } from "@/components/ui/Slider"; // We'll need to create this simple slider wrapper or standard input range
 import { Layers, RefreshCw } from "lucide-react";
-import { Math } from "@/components/mathematics/Math";
+import { Math as MathBlock } from "@/components/mathematics/Math";
 
 // Simple Recharts or Canvas for the graph. Since we need high performance/interactivity, canvas is better.
 // But as per user request for "non-ASCII schemas", we will use SVG for crisp rendering.
@@ -40,7 +39,7 @@ export function ShallowNetViz() {
 
     // Function: ReLU(w0 * x + b) * w1
     const computeUnitOutput = (x: number, unit: HiddenUnit) => {
-        const preActivation = unit.w0 * x + unit.b;
+        const preActivation = Math.max(0, unit.w0 * x + unit.b);
         const activation = Math.max(0, preActivation);
         return activation * unit.w1;
     };
@@ -215,7 +214,7 @@ export function ShallowNetViz() {
             </div>
 
             <div className="mt-6 pt-6 border-t border-zinc-800">
-                <Math latex="f(x) = \beta_0 + \sum \nu_j \cdot \text{ReLU}(\beta_j + \omega_j x)" className="text-zinc-500 text-sm" />
+                <MathBlock latex="f(x) = \beta_0 + \sum \nu_j \cdot \text{ReLU}(\beta_j + \omega_j x)" className="text-zinc-500 text-sm" />
             </div>
         </Card>
     );
