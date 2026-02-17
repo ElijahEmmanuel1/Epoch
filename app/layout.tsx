@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Noto_Serif } from "next/font/google";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
 const notoSans = Noto_Sans({
@@ -15,8 +17,29 @@ const notoSerif = Noto_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Epoch | Interactive Deep Learning",
-  description: "An interactive platform for Understanding Deep Learning by Simon J.D. Prince.",
+  title: {
+    default: "Epoch — Interactive Deep Learning",
+    template: "%s | Epoch",
+  },
+  description: "An interactive, code-first platform for mastering deep learning from first principles. Based on Understanding Deep Learning by Simon J.D. Prince.",
+  keywords: ["deep learning", "machine learning", "neural networks", "AI", "education", "interactive"],
+  authors: [{ name: "Epoch" }],
+  openGraph: {
+    title: "Epoch — Interactive Deep Learning",
+    description: "Master deep learning from first principles with interactive lessons and code.",
+    type: "website",
+    locale: "en_US",
+    siteName: "Epoch",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Epoch — Interactive Deep Learning",
+    description: "Master deep learning from first principles.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -25,11 +48,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body
         className={`${notoSans.variable} ${notoSerif.variable} antialiased bg-background text-foreground`}
       >
-        {children}
+        <ThemeProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
