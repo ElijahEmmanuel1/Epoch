@@ -1587,13 +1587,13 @@ print(f"  Formule: D(D_i+1) + D_o(D+1) = 3(1+1) + 1(3+1) = 10 ✓")
   },
 
   // ═══════════════════════════════════════
-  // MODULE 4 — RÉSEAUX PROFONDS
+  // MODULE 4 — RÉSEAUX PROFONDS (Ch. 4)
   // ═══════════════════════════════════════
   {
     id: 'deep-networks',
     title: 'Réseaux de Neurones Profonds',
     shortTitle: 'Deep Nets',
-    description: 'Composition de réseaux, profondeur vs largeur, et notation matricielle.',
+    description: 'Composition de réseaux, profondeur vs largeur, régions linéaires exponentielles et notation matricielle (Ch. 4 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['shallow-networks'],
@@ -1601,34 +1601,106 @@ print(f"  Formule: D(D_i+1) + D_o(D+1) = 3(1+1) + 1(3+1) = 10 ✓")
     theory: [
       {
         type: 'text',
-        content: `Un **réseau profond** est obtenu en **composant** plusieurs réseaux superficiels : la sortie du premier devient l'entrée du second, et ainsi de suite. Cette composition crée des fonctions beaucoup plus complexes.\n\nAvec ReLU, un réseau profond de K couches de D unités cachées chacune peut créer jusqu'à **(D+1)^K** régions linéaires, contre D+1 pour un réseau superficiel.`,
+        content: `## 4.1 — Composition de réseaux\n\nUn **réseau profond** est obtenu en **composant** des réseaux superficiels : la sortie du premier devient l'entrée du second. Le premier réseau "plie" (**fold**) l'espace d'entrée : plusieurs valeurs de x sont mappées sur la même valeur y. Le second réseau applique sa fonction, qui est alors **dupliquée** à chaque pli.`,
+      },
+      {
+        type: 'diagram',
+        content: `  ┌─────────────┐     ┌─────────────┐
+  │  Réseau 1    │     │  Réseau 2    │
+  │  x → y       │────▶│  y → y'      │
+  │  3 hidden    │     │  3 hidden    │
+  │  4 régions   │     │  4 régions   │
+  └─────────────┘     └─────────────┘
+        │                    │
+        ▼                    ▼
+  3 "plis" du              Fonction dupliquée
+  domaine x                3 × 3 = 9 régions !`,
+        label: 'Fig. 4.1 — Composer 2 réseaux : pliage + duplication',
+      },
+      {
+        type: 'callout',
+        content: '🧠 **Intuition du pliage** : le premier réseau replie l\'espace d\'entrée. Le second réseau travaille sur l\'espace replié. En "dépliant", on voit que la fonction du second réseau est répliquée à chaque pli, variously flipped et rescaled.',
+      },
+      {
+        type: 'text',
+        content: `## 4.2 — De la composition au réseau profond\n\nCette composition est un **cas particulier** d'un réseau à 2 couches cachées. Le réseau général est plus expressif car les poids entre couches sont **libres** (pas contraints au produit extérieur).`,
       },
       {
         type: 'equation',
-        content: '\\mathbf{h}_k = a[\\boldsymbol{\\beta}_k + \\boldsymbol{\\Omega}_k \\mathbf{h}_{k-1}]',
-        label: 'Couche k du réseau profond',
+        content: '\\begin{aligned} h_d\' &= a\\!\\left[\\psi_{d0} + \\psi_{d1}h_1 + \\psi_{d2}h_2 + \\psi_{d3}h_3\\right] \\end{aligned}',
+        label: 'Éq. 4.6 — Couche cachée 2 : fonction des activations de la couche 1',
         highlightVar: 'hidden',
       },
       {
         type: 'text',
-        content: `En notation matricielle, chaque couche applique une transformation affine (multiplication par la matrice de poids **Ωk** + biais **βk**) suivie d'une activation. Le réseau complet est :\n\n- Forward pass : on calcule séquentiellement h₁, h₂, ..., hK\n- La sortie finale f₃ est le résultat de la dernière couche`,
+        content: `## 4.3 — Réseau profond général\n\nUn réseau à K couches cachées applique alternativement des transformations affines et des activations ReLU. Le calcul procède couche par couche :\n\n1. **Pré-activations** fₖ = βₖ + Ωₖhₖ (transformation affine)\n2. **Activations** hₖ₊₁ = a[fₖ] (ReLU "clippe" les négatifs, crée de nouveaux joints)\n3. La sortie finale est une dernière combinaison linéaire`,
       },
       {
         type: 'equation',
-        content: '\\begin{aligned} \\mathbf{f}_0 &= \\boldsymbol{\\beta}_0 + \\boldsymbol{\\Omega}_0 \\mathbf{x} \\\\ \\mathbf{h}_k &= a[\\mathbf{f}_{k-1}] \\\\ \\mathbf{f}_k &= \\boldsymbol{\\beta}_k + \\boldsymbol{\\Omega}_k \\mathbf{h}_k \\end{aligned}',
-        label: 'Forward pass complet',
+        content: '\\begin{aligned} \\mathbf{h}_1 &= a[\\boldsymbol{\\beta}_0 + \\boldsymbol{\\Omega}_0 \\mathbf{x}] \\\\ \\mathbf{h}_k &= a[\\boldsymbol{\\beta}_{k-1} + \\boldsymbol{\\Omega}_{k-1} \\mathbf{h}_{k-1}] \\\\ \\mathbf{y} &= \\boldsymbol{\\beta}_K + \\boldsymbol{\\Omega}_K \\mathbf{h}_K \\end{aligned}',
+        label: 'Éq. 4.15 — Réseau profond à K couches cachées',
         highlightVar: 'hidden',
       },
       {
+        type: 'diagram',
+        content: `  x (Dᵢ)                                         y (Dₒ)
+  ─┬─      Ω₀         Ω₁         Ω₂         Ω₃
+   │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────┐
+   ├─▶│ β₀+Ω₀·x │▶│ β₁+Ω₁·h₁│▶│ β₂+Ω₂·h₂│▶│β₃+Ω₃│──▶ y
+   │  │  ReLU    │ │  ReLU    │ │  ReLU    │ │·h₃   │
+   │  └──────────┘ └──────────┘ └──────────┘ └──────┘
+   │     h₁(D₁)      h₂(D₂)      h₃(D₃)
+   │
+  Dᵢ=3, D₁=4, D₂=2, D₃=3, Dₒ=2  (ex. Fig. 4.6)`,
+        label: 'Fig. 4.6 — Architecture avec K=3 couches cachées',
+      },
+      {
+        type: 'text',
+        content: `## 4.4 — Hyperparamètres\n\nLe nombre de couches **K** (profondeur) et le nombre d'unités par couche **D₁, D₂, ..., Dₖ** (largeur) sont des **hyperparamètres** : ils sont fixés *avant* l'apprentissage des poids. Pour des hyperparamètres fixés, les poids définissent une fonction particulière. En changeant les hyperparamètres, on explore une "famille de familles" de fonctions.`,
+      },
+      {
+        type: 'text',
+        content: `## 4.5 — Profondeur vs Largeur\n\n**Nombre de régions linéaires** : avec D unités par couche et K couches, le nombre maximum de régions est **(D+1)^K** (vs D+1 pour un réseau superficiel). L'explosion est exponentielle :`,
+      },
+      {
+        type: 'diagram',
+        content: `  K=1 (shallow)  │  K=2           │  K=5
+  D=10            │  D=10          │  D=10
+  ─────────────── │ ────────────── │ ──────────────
+  11 régions      │  121 régions   │  161,051 régions
+  31 params       │  141 params    │  471 params
+
+  → Avec le MÊME budget de paramètres,
+    le réseau profond crée exponentiellement plus de régions !`,
+        label: 'Fig. 4.7 — Régions linéaires : shallow vs deep',
+      },
+      {
         type: 'callout',
-        content: '⚡ **Profondeur vs Largeur** : un réseau profond avec le même nombre total de paramètres qu\'un réseau superficiel large peut représenter des fonctions exponentiellement plus complexes. C\'est pourquoi le "deep" learning est si puissant.',
+        content: '⚡ **Depth efficiency** : certaines fonctions nécessitent un réseau superficiel avec **exponentiellement** plus d\'unités cachées pour atteindre la même approximation qu\'un réseau profond. C\'est pourquoi en pratique, les meilleurs résultats sont obtenus avec des dizaines ou centaines de couches.',
+      },
+      {
+        type: 'text',
+        content: `**En PyTorch**, un réseau profond se construit soit avec \`nn.Sequential\` soit avec \`nn.Module\` personnalisé :\n\n- \`nn.Sequential(*layers)\` : empile les couches, forward automatique\n- \`nn.Module\` : plus flexible, permet des skip connections (voir ResNet)\n- \`model.named_parameters()\` : inspecte couche par couche\n- \`torchsummary.summary(model, input_size)\` : résumé complet`,
+      },
+      {
+        type: 'text',
+        content: `## 4.6 — Comptage des paramètres (réseau profond)\n\nPour un réseau à K couches avec Dₖ unités par couche :`,
+      },
+      {
+        type: 'equation',
+        content: 'N_{\\text{params}} = \\sum_{k=0}^{K} D_{k+1} \\cdot (D_k + 1) \\quad \\text{où } D_0 = D_i,\\; D_{K+1} = D_o',
+        label: 'Nombre de paramètres d\'un réseau profond',
+      },
+      {
+        type: 'callout',
+        content: '🧠 **Résumé Ch. 4** :\n(1) Composer des réseaux = plier l\'espace d\'entrée\n(2) Chaque couche clippe (ReLU) et crée de nouveaux joints\n(3) Régions max = (D+1)^K — croissance exponentielle\n(4) Le deep learning est efficace car les fonctions réelles sont souvent compositionnelles\n(5) Pour les grandes entrées structurées (images), le traitement local-to-global nécessite la profondeur',
       },
     ],
     exercises: [
       {
         id: 'deep-ex1',
-        title: 'Construire un réseau à 3 couches',
-        instructions: 'Créez un réseau nn.Module avec 3 couches cachées (784→256→128→64→10). Comptez les paramètres.',
+        title: '💻 Pratique — Réseau à 3 couches cachées',
+        instructions: 'Créez un réseau nn.Module avec 3 couches cachées (784→256→128→64→10). Comptez les paramètres par couche et au total.',
         starterCode: `import torch
 import torch.nn as nn
 
@@ -1649,6 +1721,10 @@ class DeepNet(nn.Module):
 
 model = DeepNet()
 print(model)
+
+# Comptage par couche
+for name, param in model.named_parameters():
+    print(f"  {name:15s} : {str(list(param.shape)):15s} = {param.numel():>7,} params")
 
 total = sum(p.numel() for p in model.parameters())
 print(f"\\nTotal paramètres: {total:,}")`,
@@ -1673,6 +1749,9 @@ class DeepNet(nn.Module):
 model = DeepNet()
 print(model)
 
+for name, param in model.named_parameters():
+    print(f"  {name:15s} : {str(list(param.shape)):15s} = {param.numel():>7,} params")
+
 total = sum(p.numel() for p in model.parameters())
 print(f"\\nTotal paramètres: {total:,}")`,
         hints: [
@@ -1681,54 +1760,286 @@ print(f"\\nTotal paramètres: {total:,}")`,
         ],
         completed: false,
       },
+      {
+        id: 'deep-th1',
+        title: '🧠 Théorie — Régions linéaires (Prob. 4.8)',
+        instructions: 'Calculez et comparez le nombre maximum de régions linéaires pour des réseaux de profondeur K=1 à K=10, avec D=10 unités par couche. Vérifiez la formule (D+1)^K.',
+        starterCode: `import torch
+
+def max_regions_shallow(D):
+    """Régions max pour réseau superficiel"""
+    return D + 1
+
+def max_regions_deep(D, K):
+    """Régions max pour réseau profond à K couches, D unités/couche"""
+    return ___
+
+def count_params_deep(D_i, D, K, D_o):
+    """Nombre de paramètres d'un réseau profond"""
+    # Couche 1 : D*(D_i+1)
+    # Couches 2..K : (K-1)*D*(D+1)
+    # Sortie : D_o*(D+1)
+    return ___
+
+D = 10
+D_i, D_o = 1, 1
+
+print(f"{'K':>3} │ {'Params':>8} │ {'Régions max':>15} │ {'Régions/param':>15}")
+print(f"{'─'*3}─┼─{'─'*8}─┼─{'─'*15}─┼─{'─'*15}")
+for K in range(1, 11):
+    n_params = count_params_deep(D_i, D, K, D_o)
+    n_regions = max_regions_deep(D, K)
+    ratio = n_regions / n_params
+    print(f"{K:3d} │ {n_params:8,} │ {n_regions:15,} │ {ratio:15.1f}")`,
+        solution: `import torch
+
+def max_regions_shallow(D):
+    return D + 1
+
+def max_regions_deep(D, K):
+    return (D + 1) ** K
+
+def count_params_deep(D_i, D, K, D_o):
+    return D * (D_i + 1) + (K - 1) * D * (D + 1) + D_o * (D + 1)
+
+D = 10
+D_i, D_o = 1, 1
+
+print(f"{'K':>3} │ {'Params':>8} │ {'Régions max':>15} │ {'Régions/param':>15}")
+print(f"{'─'*3}─┼─{'─'*8}─┼─{'─'*15}─┼─{'─'*15}")
+for K in range(1, 11):
+    n_params = count_params_deep(D_i, D, K, D_o)
+    n_regions = max_regions_deep(D, K)
+    ratio = n_regions / n_params
+    print(f"{K:3d} │ {n_params:8,} │ {n_regions:15,} │ {ratio:15.1f}")`,
+        hints: [
+          'Régions max = (D+1)^K',
+          'Params couche 1 = D*(D_i+1), couches internes = D*(D+1), sortie = D_o*(D+1)',
+        ],
+        completed: false,
+      },
+      {
+        id: 'deep-pr2',
+        title: '💻 Pratique — Deep vs Shallow (sin approximation)',
+        instructions: 'Comparez un réseau superficiel (D=100) et un réseau profond (K=3, D=20) pour approximer sin(x). Les deux ont ~300 paramètres — lequel converge le mieux ?',
+        starterCode: `import torch
+import torch.nn as nn
+import torch.optim as optim
+import math
+
+torch.manual_seed(42)
+
+x = torch.linspace(-math.pi, math.pi, 200).unsqueeze(1)
+y = torch.sin(x)
+
+# Réseau SUPERFICIEL : 1 → 100 → 1
+shallow = nn.Sequential(
+    nn.Linear(1, 100), nn.ReLU(), nn.Linear(100, 1)
+)
+
+# Réseau PROFOND : 1 → 20 → 20 → 20 → 1
+deep = nn.Sequential(
+    ___,  # 4 couches à remplir
+)
+
+print(f"Shallow params: {sum(p.numel() for p in shallow.parameters())}")
+print(f"Deep params:    {sum(p.numel() for p in deep.parameters())}")
+
+def train(model, epochs=2000):
+    opt = optim.Adam(model.parameters(), lr=0.01)
+    loss_fn = nn.MSELoss()
+    for _ in range(epochs):
+        loss = loss_fn(model(x), y)
+        opt.zero_grad(); loss.backward(); opt.step()
+    return loss_fn(model(x), y).item()
+
+loss_s = train(shallow)
+loss_d = train(deep)
+print(f"\\nShallow loss: {loss_s:.6f}")
+print(f"Deep loss:    {loss_d:.6f}")
+print(f"→ {'Deep' if loss_d < loss_s else 'Shallow'} gagne !")`,
+        solution: `import torch
+import torch.nn as nn
+import torch.optim as optim
+import math
+
+torch.manual_seed(42)
+
+x = torch.linspace(-math.pi, math.pi, 200).unsqueeze(1)
+y = torch.sin(x)
+
+shallow = nn.Sequential(
+    nn.Linear(1, 100), nn.ReLU(), nn.Linear(100, 1)
+)
+
+deep = nn.Sequential(
+    nn.Linear(1, 20), nn.ReLU(),
+    nn.Linear(20, 20), nn.ReLU(),
+    nn.Linear(20, 20), nn.ReLU(),
+    nn.Linear(20, 1),
+)
+
+print(f"Shallow params: {sum(p.numel() for p in shallow.parameters())}")
+print(f"Deep params:    {sum(p.numel() for p in deep.parameters())}")
+
+def train(model, epochs=2000):
+    opt = optim.Adam(model.parameters(), lr=0.01)
+    loss_fn = nn.MSELoss()
+    for _ in range(epochs):
+        loss = loss_fn(model(x), y)
+        opt.zero_grad(); loss.backward(); opt.step()
+    return loss_fn(model(x), y).item()
+
+loss_s = train(shallow)
+loss_d = train(deep)
+print(f"\\nShallow loss: {loss_s:.6f}")
+print(f"Deep loss:    {loss_d:.6f}")
+print(f"→ {'Deep' if loss_d < loss_s else 'Shallow'} gagne !")`,
+        hints: [
+          'nn.Linear(1, 20), nn.ReLU(), nn.Linear(20, 20), nn.ReLU(), ...',
+          'Les deux modèles ont ~300 params mais le deep crée plus de régions',
+        ],
+        completed: false,
+      },
+      {
+        id: 'deep-th2',
+        title: '🧠 Théorie — Activation linéaire profonde (Prob. 4.1)',
+        instructions: 'Prob. 4.1 : montrez que si on compose deux réseaux SANS activation (fonction identité au lieu de ReLU), le résultat est encore une simple fonction linéaire. Démontrez-le numériquement.',
+        starterCode: `import torch
+
+# Réseau 1 : y = phi0 + phi1*x (linéaire)
+# Réseau 2 : y' = phi0' + phi1'*y (linéaire)
+# Composition : y' = phi0' + phi1'*(phi0 + phi1*x)
+#             = (phi0' + phi1'*phi0) + (phi1'*phi1)*x
+# → Encore linéaire !
+
+# Démonstration avec des couches PyTorch (sans ReLU)
+import torch.nn as nn
+
+# Deep network SANS activation
+deep_linear = nn.Sequential(
+    nn.Linear(1, 50),
+    nn.Linear(50, 50),
+    nn.Linear(50, 50),
+    nn.Linear(50, 1),
+)
+
+# Vérifier que c'est une droite
+x = torch.linspace(-3, 3, 100).unsqueeze(1)
+y = deep_linear(x).detach()
+
+# Fit linéaire : y ≈ ax + b
+x_np = x.squeeze().numpy()
+y_np = y.squeeze().numpy()
+a = (y_np[-1] - y_np[0]) / (x_np[-1] - x_np[0])
+b = y_np[0] - a * x_np[0]
+
+# Vérifier que TOUS les points sont sur la droite
+y_linear = a * x_np + b
+max_error = max(abs(y_np - y_linear))
+print(f"Pente a = {a:.4f}, offset b = {b:.4f}")
+print(f"Erreur max vs droite : {max_error:.10f}")
+print(f"→ {'✓ C\\'est bien une DROITE !' if max_error < 1e-5 else '✗ Pas linéaire'}") 
+print(f"\\n💡 Sans activation non-linéaire, empiler des couches")
+print(f"   n'ajoute AUCUNE expressivité. C'est pourquoi le ReLU est essentiel !")`,
+        solution: `import torch
+import torch.nn as nn
+
+deep_linear = nn.Sequential(
+    nn.Linear(1, 50),
+    nn.Linear(50, 50),
+    nn.Linear(50, 50),
+    nn.Linear(50, 1),
+)
+
+x = torch.linspace(-3, 3, 100).unsqueeze(1)
+y = deep_linear(x).detach()
+
+x_np = x.squeeze().numpy()
+y_np = y.squeeze().numpy()
+a = (y_np[-1] - y_np[0]) / (x_np[-1] - x_np[0])
+b = y_np[0] - a * x_np[0]
+
+y_linear = a * x_np + b
+max_error = max(abs(y_np - y_linear))
+print(f"Pente a = {a:.4f}, offset b = {b:.4f}")
+print(f"Erreur max vs droite : {max_error:.10f}")
+print(f"→ {'✓ C\\'est bien une DROITE !' if max_error < 1e-5 else '✗ Pas linéaire'}")
+print(f"\\n💡 Sans activation non-linéaire, empiler des couches")
+print(f"   n'ajoute AUCUNE expressivité. C'est pourquoi le ReLU est essentiel !")`,
+        hints: [
+          'Composition de fonctions linéaires = fonction linéaire',
+          'nn.Linear sans activation entre les couches',
+          'La sortie sera toujours une droite y = ax + b',
+        ],
+        completed: false,
+      },
     ],
     codeTemplate: `import torch
 import torch.nn as nn
 
-# ══ Réseaux Profonds vs Superficiels ══
+# ══════════════════════════════════════════════════════════════
+# Réseaux Profonds — Ch. 4 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
-# Réseau SUPERFICIEL (1 couche cachée large)
+# ── 1. Réseau SUPERFICIEL vs PROFOND ──
 shallow = nn.Sequential(
-    nn.Linear(1, 100),
-    nn.ReLU(),
-    nn.Linear(100, 1)
+    nn.Linear(1, 100), nn.ReLU(), nn.Linear(100, 1)
 )
 
-# Réseau PROFOND (3 couches cachées étroites)
 deep = nn.Sequential(
-    nn.Linear(1, 20),
-    nn.ReLU(),
-    nn.Linear(20, 20),
-    nn.ReLU(),
-    nn.Linear(20, 20),
-    nn.ReLU(),
+    nn.Linear(1, 20), nn.ReLU(),
+    nn.Linear(20, 20), nn.ReLU(),
+    nn.Linear(20, 20), nn.ReLU(),
     nn.Linear(20, 1)
 )
 
-shallow_params = sum(p.numel() for p in shallow.parameters())
-deep_params = sum(p.numel() for p in deep.parameters())
+print(f"Shallow: {sum(p.numel() for p in shallow.parameters())} params")
+print(f"Deep:    {sum(p.numel() for p in deep.parameters())} params")
 
-print(f"Shallow: {shallow_params} paramètres")
-print(f"Deep:    {deep_params} paramètres")
-
-# Les deux ont ~300 paramètres mais le deep peut
-# représenter des fonctions beaucoup plus complexes !
-
-# Forward pass
+# ── 2. Forward pass couche par couche ──
 x = torch.randn(5, 1)
-print(f"\\nShallow output: {shallow(x).squeeze().tolist()}")
-print(f"Deep output:    {deep(x).squeeze().tolist()}")
+print(f"\\n── Forward pass détaillé ──")
+h = x
+for i, layer in enumerate(deep):
+    h = layer(h)
+    print(f"  Couche {i}: {layer.__class__.__name__:10s} → shape {list(h.shape)}")
+
+# ── 3. Régions linéaires max ──
+print(f"\\n── Régions linéaires ──")
+D = 20
+for K in [1, 2, 3, 5, 10]:
+    regions = (D + 1) ** K
+    print(f"  K={K:2d}, D={D}: {regions:>15,} régions max")
+
+# ── 4. nn.Module personnalisé ──
+class FlexibleDeepNet(nn.Module):
+    def __init__(self, dims):
+        super().__init__()
+        layers = []
+        for i in range(len(dims) - 1):
+            layers.append(nn.Linear(dims[i], dims[i+1]))
+            if i < len(dims) - 2:
+                layers.append(nn.ReLU())
+        self.net = nn.Sequential(*layers)
+    
+    def forward(self, x):
+        return self.net(x)
+
+model = FlexibleDeepNet([1, 50, 50, 50, 1])
+print(f"\\nFlexible: {sum(p.numel() for p in model.parameters())} params")
+print(f"Output: {model(torch.tensor([[1.0]])).item():.4f}")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 5 — FONCTIONS DE PERTE
+  // MODULE 5 — FONCTIONS DE PERTE (Ch. 5)
   // ═══════════════════════════════════════
   {
     id: 'loss-functions',
     title: 'Fonctions de Perte (Loss Functions)',
     shortTitle: 'Loss',
-    description: 'Maximum de vraisemblance, MSE, Cross-Entropy — mesurer l\'erreur du modèle.',
+    description: 'Maximum de vraisemblance, MSE, Binary/Multi-class Cross-Entropy, régression hétéroscédastique (Ch. 5 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['deep-networks'],
@@ -1736,86 +2047,356 @@ print(f"Deep output:    {deep(x).squeeze().tolist()}")
     theory: [
       {
         type: 'text',
-        content: `La **fonction de perte** mesure à quel point les prédictions sont éloignées de la réalité. En Deep Learning, on construit les fonctions de perte via le **maximum de vraisemblance** : le modèle prédit une distribution de probabilité Pr(y|x), et on cherche les paramètres qui maximisent la probabilité des données observées.`,
+        content: `## 5.1 — La recette du Maximum de Vraisemblance\n\nLa **fonction de perte** mesure l'écart entre prédictions et réalité. Le framework universel est le **maximum de vraisemblance** en 4 étapes :\n\n1. **Choisir un modèle** de distribution Pr(y | f[x, ϕ])\n2. **Écrire la vraisemblance** L = Πᵢ Pr(yᵢ | f[xᵢ, ϕ])\n3. **Prendre le log négatif** : −log L = −Σᵢ log Pr(yᵢ | ...)\n4. **Minimiser** la perte L̂ pour trouver ϕ̂`,
       },
       {
         type: 'equation',
-        content: '\\hat{\\boldsymbol{\\phi}} = \\underset{\\boldsymbol{\\phi}}{\\text{argmax}} \\prod_{i=1}^{I} Pr(y_i | x_i)',
-        label: 'Maximum de vraisemblance',
+        content: '\\hat{\\boldsymbol{\\phi}} = \\underset{\\boldsymbol{\\phi}}{\\text{argmin}} \\left[ -\\sum_{i=1}^{I} \\log\\!\\left[ Pr(y_i \\,|\\, f[\\mathbf{x}_i, \\boldsymbol{\\phi}]) \\right] \\right]',
+        label: 'Éq. 5.2 — Estimateur du maximum de vraisemblance',
+      },
+      {
+        type: 'callout',
+        content: '🧠 **Pourquoi le log ?** Le produit de probabilités → somme de logs (plus stable numériquement). La maximisation → minimisation du négatif. Le résultat est la **negative log-likelihood** (NLL).',
       },
       {
         type: 'text',
-        content: `En prenant le logarithme négatif (pour transformer le produit en somme et la maximisation en minimisation), on obtient la **perte de log-vraisemblance négative**. Pour la régression avec bruit gaussien, cela donne le **MSE** (Mean Squared Error) :`,
+        content: `## 5.2 — Régression → MSE (Gaussienne)\n\nSi on suppose que y suit une loi **normale** centrée sur la prédiction du réseau f[x, ϕ] avec variance σ² :\n\nPr(y | f) = Normal_y[f, σ²]\n\nAlors le log négatif donne :\n−log Pr = (y − f)² / 2σ² + constante\n\nEn ignorant la constante et σ² fixe, on retrouve le **MSE** :`,
       },
       {
         type: 'equation',
-        content: '\\mathcal{L}_{MSE} = \\frac{1}{I}\\sum_{i=1}^{I}(y_i - f[x_i, \\boldsymbol{\\phi}])^2',
-        label: 'Mean Squared Error (Régression)',
+        content: '\\mathcal{L}_{\\text{MSE}} = \\frac{1}{I}\\sum_{i=1}^{I}\\left(y_i - f[\\mathbf{x}_i, \\boldsymbol{\\phi}]\\right)^2',
+        label: 'Éq. 5.6 — MSE dérivé de la vraisemblance gaussienne',
+        highlightVar: 'loss',
+      },
+      {
+        type: 'diagram',
+        content: `  Distribution de y|x        Dérivation
+  ─────────────────────      ─────────────────────────
+  y ~ Normal(f[x,ϕ], σ²)    Pr(y|x) = N(y; f, σ²)
+                             log Pr = -(y-f)²/(2σ²) + C
+      ╭──╮                   -log Pr ∝ (y - f)²
+    ╭─╯  ╰─╮                
+  ──╯ f[x,ϕ]╰──  ← σ →      → MSE Loss ! ✓`,
+        label: 'Fig. 5.3 — Gaussienne → MSE',
+      },
+      {
+        type: 'text',
+        content: `## 5.3 — Classification binaire → BCE (Bernoulli)\n\nPour y ∈ {0, 1}, on modélise Pr(y=1|x) via la **sigmoïde** σ(f) = 1/(1+e^{-f}). La distribution est **Bernoulli** et la NLL donne la **Binary Cross-Entropy** :`,
+      },
+      {
+        type: 'equation',
+        content: '\\mathcal{L}_{\\text{BCE}} = -\\frac{1}{I}\\sum_{i=1}^{I}\\left[ y_i \\log\\sigma(f_i) + (1-y_i)\\log(1-\\sigma(f_i)) \\right]',
+        label: 'Éq. 5.12 — Binary Cross-Entropy',
         highlightVar: 'loss',
       },
       {
         type: 'text',
-        content: `Pour la **classification binaire**, le modèle prédit une probabilité via sigmoid, et la perte est la **cross-entropie binaire**. Pour la classification **multi-classe** avec K classes, on utilise softmax + cross-entropie :`,
+        content: `## 5.4 — Classification multi-classe → Softmax + CE (Catégorielle)\n\nPour K classes, le réseau produit K logits. Le **softmax** transforme ces logits en probabilités positives qui somment à 1. La perte est la **cross-entropie catégorielle** :`,
       },
       {
         type: 'equation',
-        content: '\\mathcal{L}_{CE} = -\\sum_{i=1}^{I} \\sum_{k=1}^{K} y_{ik} \\log(\\hat{y}_{ik})',
-        label: 'Cross-Entropy Loss (Classification)',
+        content: '\\text{softmax}_k = \\frac{e^{f_k}}{\\sum_{j=1}^{K} e^{f_j}} \\qquad\\qquad \\mathcal{L}_{\\text{CE}} = -\\sum_{i=1}^{I} \\log\\!\\left( \\text{softmax}_{y_i}(\\mathbf{f}_i) \\right)',
+        label: 'Éq. 5.17/5.22 — Softmax + Cross-Entropy catégorielle',
+        highlightVar: 'loss',
+      },
+      {
+        type: 'diagram',
+        content: `  Logits (sortie réseau)         Softmax            Loss
+  ─────────────────────         ───────────        ──────────
+  f₁ =  2.0  ─────────╲        P(c=1) = 0.659    si y=1:
+  f₂ =  1.0  ──────────╋──▶    P(c=2) = 0.242    L = -log(0.659)
+  f₃ =  0.1  ─────────╱        P(c=3) = 0.099       = 0.417
+                        Σ=1.0 ✓
+
+  ⚠️ PyTorch nn.CrossEntropyLoss prend les LOGITS,
+     pas les probabilités ! Le softmax est inclus.`,
+        label: 'Fig. — Pipeline softmax → cross-entropy',
+      },
+      {
+        type: 'text',
+        content: `## 5.5 — Régression hétéroscédastique\n\nLe MSE standard suppose un bruit **constant** σ². Mais en réalité, l'incertitude peut varier selon x. Le réseau peut prédire **deux sorties** : la moyenne μ(x) ET la variance σ²(x). La perte devient :`,
+      },
+      {
+        type: 'equation',
+        content: '\\mathcal{L}_{\\text{hetero}} = \\sum_{i=1}^{I}\\left[ \\frac{(y_i - \\mu_i)^2}{2\\sigma_i^2} + \\frac{1}{2}\\log\\sigma_i^2 \\right]',
+        label: 'Éq. 5.8 — Perte hétéroscédastique',
         highlightVar: 'loss',
       },
       {
         type: 'callout',
-        content: '⚡ La **cross-entropie** mesure la "distance" entre la distribution prédite et la distribution réelle. Elle est toujours ≥ 0 et vaut 0 seulement quand la prédiction est parfaite.',
+        content: '⚡ **Résumé des loss functions** :\n• Régression → Normal → **MSE** (\\`nn.MSELoss\\`)\n• Binaire → Bernoulli+sigmoid → **BCE** (\\`nn.BCEWithLogitsLoss\\`)\n• Multi-classe → Catégorielle+softmax → **CE** (\\`nn.CrossEntropyLoss\\`)\n• Incertitude variable → Hétéroscédastique (custom)\n\nCe sont TOUTES des cas particuliers de la NLL !',
+      },
+      {
+        type: 'text',
+        content: `**En PyTorch**, les fonctions de perte sont dans \`torch.nn\` :\n\n- \`nn.MSELoss()\` : régression\n- \`nn.BCEWithLogitsLoss()\` : binaire (inclut sigmoid, plus stable)\n- \`nn.CrossEntropyLoss()\` : multi-classe (inclut softmax)\n- \`nn.NLLLoss()\` : NLL brute (si softmax déjà appliqué via \`nn.LogSoftmax\`)\n\n⚠️ \`nn.CrossEntropyLoss\` attend des **logits** (pas des probabilités) et des **labels entiers** (pas one-hot).`,
       },
     ],
     exercises: [
       {
         id: 'loss-ex1',
-        title: 'Comparer MSE et Cross-Entropy',
-        instructions: 'Calculez la perte MSE pour un problème de régression et la perte Cross-Entropy pour un problème de classification.',
+        title: '💻 Pratique — MSE manuelle vs PyTorch',
+        instructions: 'Implémentez le MSE manuellement et vérifiez qu\'il correspond à nn.MSELoss. Calculez aussi la NLL gaussienne complète.',
         starterCode: `import torch
 import torch.nn as nn
 
-# ── Régression : MSE ──
-predictions = torch.tensor([2.5, 3.2, 4.1])
-targets = torch.tensor([3.0, 3.0, 4.0])
+predictions = torch.tensor([2.5, 3.2, 4.1, 1.8])
+targets = torch.tensor([3.0, 3.0, 4.0, 2.0])
 
-mse = nn.MSELoss()
-loss_mse = ___
+# 1. MSE manuelle
+mse_manual = ___  # torch.mean((pred - target)²)
 
-# ── Classification : Cross-Entropy ──
-logits = torch.tensor([[2.0, 1.0, 0.1],
-                        [0.5, 2.5, 0.3]])
-labels = torch.tensor([0, 1])
+# 2. MSE PyTorch
+mse_pytorch = nn.MSELoss()(predictions, targets)
 
-ce = nn.CrossEntropyLoss()
-loss_ce = ___
+# 3. NLL gaussienne complète (avec sigma=0.5)
+sigma = 0.5
+nll = torch.mean(
+    (targets - predictions)**2 / (2 * sigma**2) + torch.log(torch.tensor(sigma))
+)
 
-print(f"MSE Loss: {loss_mse.item():.4f}")
-print(f"CE Loss:  {loss_ce.item():.4f}")`,
+print(f"MSE manuelle:  {mse_manual.item():.6f}")
+print(f"MSE PyTorch:   {mse_pytorch.item():.6f}")
+print(f"NLL (σ={sigma}): {nll.item():.6f}")
+print(f"\\n→ MSE = NLL × 2σ² = {nll.item() * 2 * sigma**2:.6f}")`,
         solution: `import torch
 import torch.nn as nn
 
-# ── Régression : MSE ──
-predictions = torch.tensor([2.5, 3.2, 4.1])
-targets = torch.tensor([3.0, 3.0, 4.0])
+predictions = torch.tensor([2.5, 3.2, 4.1, 1.8])
+targets = torch.tensor([3.0, 3.0, 4.0, 2.0])
 
-mse = nn.MSELoss()
-loss_mse = mse(predictions, targets)
+mse_manual = torch.mean((predictions - targets) ** 2)
+mse_pytorch = nn.MSELoss()(predictions, targets)
 
-# ── Classification : Cross-Entropy ──
+sigma = 0.5
+nll = torch.mean(
+    (targets - predictions)**2 / (2 * sigma**2) + torch.log(torch.tensor(sigma))
+)
+
+print(f"MSE manuelle:  {mse_manual.item():.6f}")
+print(f"MSE PyTorch:   {mse_pytorch.item():.6f}")
+print(f"NLL (σ={sigma}): {nll.item():.6f}")
+print(f"\\n→ MSE = NLL × 2σ² = {nll.item() * 2 * sigma**2:.6f}")`,
+        hints: [
+          'mse_manual = torch.mean((predictions - targets) ** 2)',
+          'La NLL gaussienne = (y-f)²/(2σ²) + log(σ)',
+        ],
+        completed: false,
+      },
+      {
+        id: 'loss-ex2',
+        title: '💻 Pratique — BCE avec Sigmoid',
+        instructions: 'Comparez nn.BCELoss (attend des probabilités) et nn.BCEWithLogitsLoss (attend des logits). Vérifiez qu\'ils donnent le même résultat.',
+        starterCode: `import torch
+import torch.nn as nn
+
+logits = torch.tensor([2.0, -1.0, 0.5, 3.0])
+targets = torch.tensor([1.0, 0.0, 1.0, 1.0])
+
+# 1. Avec BCEWithLogitsLoss (recommandé)
+loss_logits = nn.BCEWithLogitsLoss()(logits, targets)
+
+# 2. Avec BCELoss (appliquer sigmoid d'abord)
+probs = ___  # torch.sigmoid(logits)
+loss_probs = nn.BCELoss()(probs, targets)
+
+# 3. Manuelle
+bce_manual = -torch.mean(
+    targets * torch.log(probs + 1e-8) + (1 - targets) * torch.log(1 - probs + 1e-8)
+)
+
+print(f"BCEWithLogitsLoss: {loss_logits.item():.6f}")
+print(f"BCELoss (sigmoid): {loss_probs.item():.6f}")
+print(f"BCE manuelle:      {bce_manual.item():.6f}")
+print(f"\\n✓ Identiques !" if abs(loss_logits.item() - loss_probs.item()) < 1e-5 else "✗ Différents")`,
+        solution: `import torch
+import torch.nn as nn
+
+logits = torch.tensor([2.0, -1.0, 0.5, 3.0])
+targets = torch.tensor([1.0, 0.0, 1.0, 1.0])
+
+loss_logits = nn.BCEWithLogitsLoss()(logits, targets)
+
+probs = torch.sigmoid(logits)
+loss_probs = nn.BCELoss()(probs, targets)
+
+bce_manual = -torch.mean(
+    targets * torch.log(probs + 1e-8) + (1 - targets) * torch.log(1 - probs + 1e-8)
+)
+
+print(f"BCEWithLogitsLoss: {loss_logits.item():.6f}")
+print(f"BCELoss (sigmoid): {loss_probs.item():.6f}")
+print(f"BCE manuelle:      {bce_manual.item():.6f}")
+print(f"\\n✓ Identiques !" if abs(loss_logits.item() - loss_probs.item()) < 1e-5 else "✗ Différents")`,
+        hints: [
+          'probs = torch.sigmoid(logits)',
+          'BCEWithLogitsLoss = sigmoid + BCELoss en une seule opération',
+        ],
+        completed: false,
+      },
+      {
+        id: 'loss-th1',
+        title: '🧠 Théorie — Softmax + CE multi-classe',
+        instructions: 'Implémentez softmax et cross-entropy manuellement. Vérifiez contre nn.CrossEntropyLoss. Montrez que le softmax est invariant par translation.',
+        starterCode: `import torch
+import torch.nn as nn
+
 logits = torch.tensor([[2.0, 1.0, 0.1],
                         [0.5, 2.5, 0.3]])
 labels = torch.tensor([0, 1])
 
-ce = nn.CrossEntropyLoss()
-loss_ce = ce(logits, labels)
+# 1. Softmax manuelle
+def softmax_manual(z):
+    e = torch.exp(z - z.max(dim=-1, keepdim=True).values)  # stabilité
+    return e / e.sum(dim=-1, keepdim=True)
 
-print(f"MSE Loss: {loss_mse.item():.4f}")
-print(f"CE Loss:  {loss_ce.item():.4f}")`,
+probs = softmax_manual(logits)
+print(f"Softmax: {probs}")
+print(f"Somme:   {probs.sum(dim=-1)}")
+
+# 2. Cross-entropy manuelle
+def cross_entropy_manual(logits, labels):
+    probs = softmax_manual(logits)
+    log_probs = torch.log(probs + 1e-8)
+    return ___  # NLL
+
+ce_manual = cross_entropy_manual(logits, labels)
+ce_pytorch = nn.CrossEntropyLoss()(logits, labels)
+
+print(f"\\nCE manuelle: {ce_manual.item():.6f}")
+print(f"CE PyTorch:  {ce_pytorch.item():.6f}")
+
+# 3. Invariance par translation
+shifted = logits + 100  
+print(f"\\nSoftmax invariant ? {torch.allclose(softmax_manual(logits), softmax_manual(shifted))}")`,
+        solution: `import torch
+import torch.nn as nn
+
+logits = torch.tensor([[2.0, 1.0, 0.1],
+                        [0.5, 2.5, 0.3]])
+labels = torch.tensor([0, 1])
+
+def softmax_manual(z):
+    e = torch.exp(z - z.max(dim=-1, keepdim=True).values)
+    return e / e.sum(dim=-1, keepdim=True)
+
+probs = softmax_manual(logits)
+print(f"Softmax: {probs}")
+print(f"Somme:   {probs.sum(dim=-1)}")
+
+def cross_entropy_manual(logits, labels):
+    probs = softmax_manual(logits)
+    log_probs = torch.log(probs + 1e-8)
+    return -torch.mean(log_probs[range(len(labels)), labels])
+
+ce_manual = cross_entropy_manual(logits, labels)
+ce_pytorch = nn.CrossEntropyLoss()(logits, labels)
+
+print(f"\\nCE manuelle: {ce_manual.item():.6f}")
+print(f"CE PyTorch:  {ce_pytorch.item():.6f}")
+
+shifted = logits + 100
+print(f"\\nSoftmax invariant ? {torch.allclose(softmax_manual(logits), softmax_manual(shifted))}")`,
         hints: [
-          'loss_mse = mse(predictions, targets)',
-          'CrossEntropyLoss prend des logits (avant softmax) et des labels entiers',
+          'NLL = -mean(log_probs[range(N), labels])',
+          'Soustraire le max pour la stabilité numérique (log-sum-exp trick)',
+        ],
+        completed: false,
+      },
+      {
+        id: 'loss-pr3',
+        title: '💻 Pratique — Régression hétéroscédastique',
+        instructions: 'Construisez un réseau qui prédit à la fois la moyenne μ(x) et la variance σ²(x), puis entraînez-le sur des données avec un bruit variable.',
+        starterCode: `import torch
+import torch.nn as nn
+import torch.optim as optim
+import math
+
+torch.manual_seed(42)
+
+# Données avec bruit VARIABLE
+x = torch.linspace(-3, 3, 300).unsqueeze(1)
+noise_std = 0.1 + 0.5 * torch.abs(x)  # bruit croissant avec |x|
+y = torch.sin(x) + noise_std * torch.randn_like(x)
+
+class HeteroNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.shared = nn.Sequential(
+            nn.Linear(1, 64), nn.ReLU(), nn.Linear(64, 64), nn.ReLU()
+        )
+        self.head_mu = nn.Linear(64, 1)     # prédit μ
+        self.head_logvar = nn.Linear(64, 1)  # prédit log(σ²)
+    
+    def forward(self, x):
+        h = self.shared(x)
+        mu = self.head_mu(h)
+        log_var = self.head_logvar(h)
+        return mu, log_var
+
+model = HeteroNet()
+opt = optim.Adam(model.parameters(), lr=0.005)
+
+for epoch in range(1500):
+    mu, log_var = model(x)
+    # Perte hétéroscédastique : (y-μ)²/(2σ²) + log(σ²)/2
+    loss = torch.mean(
+        ___  # à compléter
+    )
+    opt.zero_grad(); loss.backward(); opt.step()
+    if (epoch+1) % 500 == 0:
+        print(f"Epoch {epoch+1}: loss = {loss.item():.4f}")
+
+mu, log_var = model(x)
+sigma = torch.exp(0.5 * log_var).detach()
+print(f"\\nσ moyen à x=0: {sigma[150].item():.3f}")
+print(f"σ moyen à x=3: {sigma[-1].item():.3f}")
+print(f"→ Le modèle a appris que le bruit augmente avec |x| !")`,
+        solution: `import torch
+import torch.nn as nn
+import torch.optim as optim
+import math
+
+torch.manual_seed(42)
+
+x = torch.linspace(-3, 3, 300).unsqueeze(1)
+noise_std = 0.1 + 0.5 * torch.abs(x)
+y = torch.sin(x) + noise_std * torch.randn_like(x)
+
+class HeteroNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.shared = nn.Sequential(
+            nn.Linear(1, 64), nn.ReLU(), nn.Linear(64, 64), nn.ReLU()
+        )
+        self.head_mu = nn.Linear(64, 1)
+        self.head_logvar = nn.Linear(64, 1)
+    
+    def forward(self, x):
+        h = self.shared(x)
+        mu = self.head_mu(h)
+        log_var = self.head_logvar(h)
+        return mu, log_var
+
+model = HeteroNet()
+opt = optim.Adam(model.parameters(), lr=0.005)
+
+for epoch in range(1500):
+    mu, log_var = model(x)
+    loss = torch.mean(
+        (y - mu)**2 / (2 * torch.exp(log_var)) + 0.5 * log_var
+    )
+    opt.zero_grad(); loss.backward(); opt.step()
+    if (epoch+1) % 500 == 0:
+        print(f"Epoch {epoch+1}: loss = {loss.item():.4f}")
+
+mu, log_var = model(x)
+sigma = torch.exp(0.5 * log_var).detach()
+print(f"\\nσ moyen à x=0: {sigma[150].item():.3f}")
+print(f"σ moyen à x=3: {sigma[-1].item():.3f}")
+print(f"→ Le modèle a appris que le bruit augmente avec |x| !")`,
+        hints: [
+          'loss = (y - mu)**2 / (2 * exp(log_var)) + 0.5 * log_var',
+          'On utilise log_var au lieu de σ² pour garantir la positivité',
         ],
         completed: false,
       },
@@ -1823,50 +2404,55 @@ print(f"CE Loss:  {loss_ce.item():.4f}")`,
     codeTemplate: `import torch
 import torch.nn as nn
 
-# ══ Fonctions de Perte — Depuis le Maximum de Vraisemblance ══
+# ══════════════════════════════════════════════════════════════
+# Fonctions de Perte — Ch. 5 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
-# ── 1. MSE pour la régression ──
+# ── 1. MSE (Régression) ──
 pred = torch.tensor([2.5, 3.2, 4.1, 1.8])
 target = torch.tensor([3.0, 3.0, 4.0, 2.0])
 
-mse = nn.MSELoss()
-print(f"MSE Loss: {mse(pred, target).item():.4f}")
+print("═══ MSE (Gaussienne → Distance quadratique) ═══")
+mse = nn.MSELoss()(pred, target)
+mse_manual = torch.mean((pred - target) ** 2)
+print(f"  PyTorch: {mse.item():.6f}")
+print(f"  Manuel:  {mse_manual.item():.6f}")
 
-# Calcul manuel
-manual_mse = torch.mean((pred - target) ** 2)
-print(f"MSE manuelle: {manual_mse.item():.4f}")
+# ── 2. BCE (Classification binaire) ──
+print("\\n═══ BCE (Bernoulli → Binary Cross-Entropy) ═══")
+logits = torch.tensor([2.0, -1.0, 0.5])
+labels = torch.tensor([1.0, 0.0, 1.0])
+bce = nn.BCEWithLogitsLoss()(logits, labels)
+print(f"  BCE (logits): {bce.item():.6f}")
 
-# ── 2. Binary Cross-Entropy ──
-# Pour classification binaire (sortie sigmoid)
-pred_prob = torch.tensor([0.9, 0.2, 0.8])
-target_bin = torch.tensor([1.0, 0.0, 1.0])
+# ── 3. CE (Classification multi-classe) ──
+print("\\n═══ CE (Catégorielle → Cross-Entropy) ═══")
+logits_mc = torch.tensor([[2.0, 1.0, 0.1],
+                           [0.5, 2.5, 0.3]])
+labels_mc = torch.tensor([0, 1])
+ce = nn.CrossEntropyLoss()(logits_mc, labels_mc)
+print(f"  CE: {ce.item():.6f}")
+probs = torch.softmax(logits_mc, dim=1)
+print(f"  Softmax → {probs[0].tolist()}")
 
-bce = nn.BCELoss()
-print(f"\\nBCE Loss: {bce(pred_prob, target_bin).item():.4f}")
-
-# ── 3. Cross-Entropy pour multi-classe ──
-logits = torch.tensor([[2.0, 1.0, 0.1],
-                        [0.5, 2.5, 0.3],
-                        [0.1, 0.3, 3.0]])
-labels = torch.tensor([0, 1, 2])  # classes correctes
-
-ce = nn.CrossEntropyLoss()
-print(f"CE Loss: {ce(logits, labels).item():.4f}")
-
-# Vérifier les probabilités avec softmax
-probs = torch.softmax(logits, dim=1)
-print(f"\\nProbabilités prédites:\\n{probs}")
+# ── 4. Résumé ──
+print("\\n═══ Tableau récapitulatif ═══")
+print("  Tâche          │ Distribution  │ Loss      │ PyTorch")
+print("  ───────────────┼───────────────┼───────────┼──────────────────")
+print("  Régression     │ Gaussienne    │ MSE       │ nn.MSELoss")
+print("  Binaire        │ Bernoulli     │ BCE       │ nn.BCEWithLogitsLoss")
+print("  Multi-classe   │ Catégorielle  │ CE        │ nn.CrossEntropyLoss")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 6 — DESCENTE DE GRADIENT
+  // MODULE 6 — DESCENTE DE GRADIENT (Ch. 6)
   // ═══════════════════════════════════════
   {
     id: 'gradient-descent',
     title: 'Descente de Gradient & Optimisation',
     shortTitle: 'Gradient',
-    description: 'Gradient descent, SGD, Momentum et Adam — comment entraîner un réseau.',
+    description: 'GD, SGD avec mini-batches, Momentum, Nesterov, Adam — comment entraîner un réseau (Ch. 6 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['loss-functions'],
@@ -1874,68 +2460,123 @@ print(f"\\nProbabilités prédites:\\n{probs}")
     theory: [
       {
         type: 'text',
-        content: `La **descente de gradient** est l'algorithme itératif standard pour entraîner les réseaux de neurones. On part de paramètres initiaux aléatoires, puis on répète deux étapes :\n\n1. **Calculer le gradient** ∂L/∂ϕ de la perte par rapport aux paramètres\n2. **Mettre à jour** les paramètres dans la direction opposée au gradient`,
+        content: `## 6.1 — Descente de gradient (GD)\n\nLa **descente de gradient** est l'algorithme itératif standard pour minimiser la perte L[ϕ]. On part de paramètres initiaux ϕ₀ aléatoires, puis on répète :\n\n1. **Calculer le gradient** ∂L/∂ϕ (direction de plus forte montée)\n2. **Faire un pas** dans la direction **opposée** (descente)`,
       },
       {
         type: 'equation',
-        content: '\\boldsymbol{\\phi} \\leftarrow \\boldsymbol{\\phi} - \\alpha \\cdot \\frac{\\partial \\mathcal{L}}{\\partial \\boldsymbol{\\phi}}',
-        label: 'Règle de mise à jour (Gradient Descent)',
+        content: '\\boldsymbol{\\phi}_{t+1} \\leftarrow \\boldsymbol{\\phi}_t - \\alpha \\cdot \\frac{\\partial \\mathcal{L}[\\boldsymbol{\\phi}_t]}{\\partial \\boldsymbol{\\phi}}',
+        label: 'Éq. 6.3 — Mise à jour Gradient Descent',
+        highlightVar: 'grad',
+      },
+      {
+        type: 'diagram',
+        content: `  Paysage de perte L(ϕ)
+  ──────────────────────────────────────────
+  L ↑
+    │    ╭╮                  α trop grand
+    │   ╱  ╲    ╭──╮         → oscillation
+    │  ╱    ╲  ╱    ╲
+    │ ╱      ╲╱      ╲       α juste
+    │╱  ← pas ←       ╲     → convergence
+    │  ─────▶ϕ*         ╲
+    └────────────────────── ϕ →
+        minimum local`,
+        label: 'Fig. 6.3 — Learning rate α trop grand vs juste',
+      },
+      {
+        type: 'text',
+        content: `## 6.2 — SGD avec mini-batches\n\nLe GD classique calcule le gradient sur **tout** le dataset → coûteux. Le **SGD** (Stochastic Gradient Descent) utilise un **mini-batch** B de taille b à chaque itération :\n\n- Un passage complet sur toutes les données = une **epoch**\n- Le gradient est bruité mais **non-biaisé** en espérance\n- En pratique : b = 32, 64, 128, 256`,
+      },
+      {
+        type: 'equation',
+        content: '\\boldsymbol{\\phi}_{t+1} \\leftarrow \\boldsymbol{\\phi}_t - \\alpha \\cdot \\frac{1}{|\\mathcal{B}_t|} \\sum_{i \\in \\mathcal{B}_t} \\frac{\\partial \\ell_i}{\\partial \\boldsymbol{\\phi}}',
+        label: 'Éq. 6.10 — SGD avec mini-batch',
         highlightVar: 'grad',
       },
       {
         type: 'text',
-        content: `Le **SGD** (Stochastic Gradient Descent) utilise un **mini-batch** aléatoire au lieu de tout le dataset, ce qui est bien plus rapide. Le **Momentum** ajoute une "inertie" qui lisse les mises à jour. **Adam** combine momentum + adaptation du learning rate par paramètre.`,
+        content: `## 6.3 — Momentum\n\nLe SGD pur oscille dans les vallées étroites. Le **Momentum** ajoute de l'inertie : on accumule une **moyenne mobile** des gradients passés. Cela lisse la trajectoire et accélère dans les directions constantes :`,
       },
       {
         type: 'equation',
-        content: '\\begin{aligned} \\mathbf{m}_t &= \\beta_1 \\mathbf{m}_{t-1} + (1-\\beta_1) \\mathbf{g}_t \\\\ \\mathbf{v}_t &= \\beta_2 \\mathbf{v}_{t-1} + (1-\\beta_2) \\mathbf{g}_t^2 \\\\ \\boldsymbol{\\phi}_t &= \\boldsymbol{\\phi}_{t-1} - \\alpha \\frac{\\hat{\\mathbf{m}}_t}{\\sqrt{\\hat{\\mathbf{v}}_t} + \\epsilon} \\end{aligned}',
-        label: 'Algorithme Adam',
+        content: '\\begin{aligned} \\mathbf{m}_{t+1} &= \\beta \\, \\mathbf{m}_t + (1 - \\beta) \\frac{\\partial \\mathcal{L}}{\\partial \\boldsymbol{\\phi}} \\\\ \\boldsymbol{\\phi}_{t+1} &= \\boldsymbol{\\phi}_t - \\alpha \\, \\mathbf{m}_{t+1} \\end{aligned}',
+        label: 'Éq. 6.11 — SGD avec Momentum (β ≈ 0.9)',
+      },
+      {
+        type: 'text',
+        content: `## 6.4 — Adam (Adaptive Moment Estimation)\n\n**Adam** combine Momentum (moyenne mobile du gradient m) et **RMSProp** (moyenne mobile du gradient²). Il adapte le learning rate **par paramètre** — les paramètres peu mis à jour reçoivent des pas plus grands :`,
+      },
+      {
+        type: 'equation',
+        content: '\\begin{aligned} \\mathbf{m}_t &= \\beta_1 \\mathbf{m}_{t-1} + (1-\\beta_1) \\mathbf{g}_t & \\text{(1er moment)} \\\\ \\mathbf{v}_t &= \\beta_2 \\mathbf{v}_{t-1} + (1-\\beta_2) \\mathbf{g}_t^2 & \\text{(2e moment)} \\\\ \\hat{\\mathbf{m}}_t &= \\frac{\\mathbf{m}_t}{1 - \\beta_1^t} \\;,\\; \\hat{\\mathbf{v}}_t = \\frac{\\mathbf{v}_t}{1 - \\beta_2^t} & \\text{(correction biais)} \\\\ \\boldsymbol{\\phi}_t &= \\boldsymbol{\\phi}_{t-1} - \\alpha \\frac{\\hat{\\mathbf{m}}_t}{\\sqrt{\\hat{\\mathbf{v}}_t} + \\epsilon} & \\text{(mise à jour)} \\end{aligned}',
+        label: 'Éq. 6.15–6.18 — Algorithme Adam',
+      },
+      {
+        type: 'diagram',
+        content: `  Comparaison des optimiseurs
+  ─────────────────────────────────────────
+                        Batch GD   SGD    Momentum  Adam
+  ─────────────────────────────────────────
+  Vitesse par step      Lent      Rapide  Rapide    Rapide
+  Stabilité             +++       +       ++        +++
+  Learning rate adaptatif  Non   Non     Non       OUI
+  Biais-correction         -      -       -        OUI
+  Usage mémoire           1×      1×      2×        3×
+  Défaut α                 -     0.01    0.01     0.001
+  ─────────────────────────────────────────
+  β₁ = 0.9,  β₂ = 0.999,  ε = 10⁻⁸ (défauts Adam)`,
+        label: 'Tableau — Comparaison des optimiseurs',
+      },
+      {
+        type: 'text',
+        content: `## 6.5 — Hyperparamètres d'entraînement\n\n- **Learning rate α** : le PLUS important. Trop grand → diverge. Trop petit → trop lent.\n- **Batch size** : grand → gradient stable mais moins de mises à jour/epoch\n- **Epochs** : nombre de passes sur les données\n- **Learning rate schedule** : réduire α au fil du temps (step decay, cosine annealing, warmup)\n\n**Recherche d'hyperparamètres** : grid search, random search (souvent meilleur), ou Bayesian optimization.`,
       },
       {
         type: 'callout',
-        content: '💡 Le **learning rate α** est l\'hyperparamètre le plus important. Trop grand → la perte diverge. Trop petit → l\'entraînement est trop lent. Adam (α ≈ 0.001) est le choix par défaut en pratique.',
+        content: '💡 **Recette pratique** :\n1. Commencer avec **Adam** (α=0.001, β₁=0.9, β₂=0.999)\n2. Batch size = 32 ou 64\n3. Surveiller la **perte de validation** (early stopping)\n4. Si sous-optimal → essayer SGD+Momentum avec learning rate schedule\n5. Ne jamais tuner sur les données de test !',
       },
     ],
     exercises: [
       {
         id: 'gd-ex1',
-        title: 'SGD vs Adam',
-        instructions: 'Entraînez le même modèle avec SGD et Adam. Comparez la vitesse de convergence.',
+        title: '💻 Pratique — SGD vs Adam',
+        instructions: 'Entraînez le même modèle avec SGD, SGD+Momentum et Adam. Comparez la vitesse de convergence sur 200 epochs.',
         starterCode: `import torch
 import torch.nn as nn
 import torch.optim as optim
 
 torch.manual_seed(42)
 
-# Données : y = 3x + 2
 x = torch.randn(100, 1)
 y = 3 * x + 2 + torch.randn(100, 1) * 0.1
 
-# Modèle avec SGD
-model_sgd = nn.Linear(1, 1)
-opt_sgd = ___
-
-# Modèle avec Adam
-model_adam = nn.Linear(1, 1)
-opt_adam = ___
-
 loss_fn = nn.MSELoss()
 
+# 3 copies du même modèle
+model_sgd = nn.Linear(1, 1)
+model_mom = nn.Linear(1, 1)
+model_adam = nn.Linear(1, 1)
+
+# Copier les mêmes poids initiaux
+model_mom.load_state_dict(model_sgd.state_dict())
+model_adam.load_state_dict(model_sgd.state_dict())
+
+opt_sgd = optim.SGD(model_sgd.parameters(), lr=0.01)
+opt_mom = optim.SGD(model_mom.parameters(), lr=0.01, momentum=___)
+opt_adam = optim.Adam(model_adam.parameters(), lr=___)
+
 for epoch in range(200):
-    # SGD step
-    loss_sgd = loss_fn(model_sgd(x), y)
-    opt_sgd.zero_grad()
-    loss_sgd.backward()
-    opt_sgd.step()
-    
-    # Adam step
-    loss_adam = loss_fn(model_adam(x), y)
-    opt_adam.zero_grad()
-    loss_adam.backward()
-    opt_adam.step()
+    for model, opt, name in [(model_sgd, opt_sgd, 'SGD'),
+                              (model_mom, opt_mom, 'Mom'),
+                              (model_adam, opt_adam, 'Adam')]:
+        loss = loss_fn(model(x), y)
+        opt.zero_grad(); loss.backward(); opt.step()
     
     if (epoch+1) % 50 == 0:
-        print(f"Epoch {epoch+1}: SGD={loss_sgd.item():.4f}, Adam={loss_adam.item():.4f}")`,
+        l1 = loss_fn(model_sgd(x), y).item()
+        l2 = loss_fn(model_mom(x), y).item()
+        l3 = loss_fn(model_adam(x), y).item()
+        print(f"Epoch {epoch+1:3d}: SGD={l1:.4f}  Mom={l2:.4f}  Adam={l3:.4f}")`,
         solution: `import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -1945,30 +2586,184 @@ torch.manual_seed(42)
 x = torch.randn(100, 1)
 y = 3 * x + 2 + torch.randn(100, 1) * 0.1
 
-model_sgd = nn.Linear(1, 1)
-opt_sgd = optim.SGD(model_sgd.parameters(), lr=0.01)
-
-model_adam = nn.Linear(1, 1)
-opt_adam = optim.Adam(model_adam.parameters(), lr=0.01)
-
 loss_fn = nn.MSELoss()
 
+model_sgd = nn.Linear(1, 1)
+model_mom = nn.Linear(1, 1)
+model_adam = nn.Linear(1, 1)
+
+model_mom.load_state_dict(model_sgd.state_dict())
+model_adam.load_state_dict(model_sgd.state_dict())
+
+opt_sgd = optim.SGD(model_sgd.parameters(), lr=0.01)
+opt_mom = optim.SGD(model_mom.parameters(), lr=0.01, momentum=0.9)
+opt_adam = optim.Adam(model_adam.parameters(), lr=0.001)
+
 for epoch in range(200):
-    loss_sgd = loss_fn(model_sgd(x), y)
-    opt_sgd.zero_grad()
-    loss_sgd.backward()
-    opt_sgd.step()
-    
-    loss_adam = loss_fn(model_adam(x), y)
-    opt_adam.zero_grad()
-    loss_adam.backward()
-    opt_adam.step()
+    for model, opt, name in [(model_sgd, opt_sgd, 'SGD'),
+                              (model_mom, opt_mom, 'Mom'),
+                              (model_adam, opt_adam, 'Adam')]:
+        loss = loss_fn(model(x), y)
+        opt.zero_grad(); loss.backward(); opt.step()
     
     if (epoch+1) % 50 == 0:
-        print(f"Epoch {epoch+1}: SGD={loss_sgd.item():.4f}, Adam={loss_adam.item():.4f}")`,
+        l1 = loss_fn(model_sgd(x), y).item()
+        l2 = loss_fn(model_mom(x), y).item()
+        l3 = loss_fn(model_adam(x), y).item()
+        print(f"Epoch {epoch+1:3d}: SGD={l1:.4f}  Mom={l2:.4f}  Adam={l3:.4f}")`,
         hints: [
-          'optim.SGD(model.parameters(), lr=0.01)',
-          'optim.Adam(model.parameters(), lr=0.01)',
+          'momentum=0.9 pour SGD avec Momentum',
+          'lr=0.001 pour Adam (learning rate adaptatif, donc plus petit)',
+        ],
+        completed: false,
+      },
+      {
+        id: 'gd-th1',
+        title: '🧠 Théorie — Adam from scratch',
+        instructions: 'Implémentez l\'algorithme Adam manuellement (sans optim.Adam) et vérifiez la convergence sur une fonction simple f(x) = (x-3)².',
+        starterCode: `import torch
+
+# Minimiser f(x) = (x - 3)²
+x = torch.tensor(10.0, requires_grad=True)
+
+# Hyperparamètres Adam
+alpha = 0.1
+beta1, beta2, eps = 0.9, 0.999, 1e-8
+m, v = 0.0, 0.0
+
+print(f"{'t':>3} │ {'x':>8} │ {'grad':>8} │ {'m_hat':>8} │ {'v_hat':>10} │ {'f(x)':>8}")
+print("─" * 60)
+
+for t in range(1, 51):
+    # Forward
+    f = (x - 3) ** 2
+    f.backward()
+    g = x.grad.item()
+    
+    # Adam update
+    m = ___  # β₁ * m + (1-β₁) * g
+    v = ___  # β₂ * v + (1-β₂) * g²
+    m_hat = m / (1 - beta1**t)  # correction biais
+    v_hat = v / (1 - beta2**t)
+    
+    with torch.no_grad():
+        x -= alpha * m_hat / (v_hat**0.5 + eps)
+        x.grad.zero_()
+    
+    if t <= 5 or t % 10 == 0:
+        print(f"{t:3d} │ {x.item():8.4f} │ {g:8.4f} │ {m_hat:8.4f} │ {v_hat:10.6f} │ {(x.item()-3)**2:8.4f}")
+
+print(f"\\n✓ x final = {x.item():.6f} (cible = 3.0)")`,
+        solution: `import torch
+
+x = torch.tensor(10.0, requires_grad=True)
+
+alpha = 0.1
+beta1, beta2, eps = 0.9, 0.999, 1e-8
+m, v = 0.0, 0.0
+
+print(f"{'t':>3} │ {'x':>8} │ {'grad':>8} │ {'m_hat':>8} │ {'v_hat':>10} │ {'f(x)':>8}")
+print("─" * 60)
+
+for t in range(1, 51):
+    f = (x - 3) ** 2
+    f.backward()
+    g = x.grad.item()
+    
+    m = beta1 * m + (1 - beta1) * g
+    v = beta2 * v + (1 - beta2) * g ** 2
+    m_hat = m / (1 - beta1**t)
+    v_hat = v / (1 - beta2**t)
+    
+    with torch.no_grad():
+        x -= alpha * m_hat / (v_hat**0.5 + eps)
+        x.grad.zero_()
+    
+    if t <= 5 or t % 10 == 0:
+        print(f"{t:3d} │ {x.item():8.4f} │ {g:8.4f} │ {m_hat:8.4f} │ {v_hat:10.6f} │ {(x.item()-3)**2:8.4f}")
+
+print(f"\\n✓ x final = {x.item():.6f} (cible = 3.0)")`,
+        hints: [
+          'm = β₁ * m + (1 - β₁) * g',
+          'v = β₂ * v + (1 - β₂) * g²',
+          'La correction de biais divise par (1 - βᵢᵗ)',
+        ],
+        completed: false,
+      },
+      {
+        id: 'gd-pr2',
+        title: '💻 Pratique — Mini-batch SGD avec DataLoader',
+        instructions: 'Utilisez torch.utils.data.DataLoader pour créer des mini-batches et entraîner un réseau avec SGD.',
+        starterCode: `import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
+
+torch.manual_seed(42)
+
+# Dataset
+X = torch.randn(1000, 5)
+W_true = torch.tensor([1.0, -2.0, 3.0, -1.0, 0.5])
+y = X @ W_true + 0.1 * torch.randn(1000)
+
+dataset = TensorDataset(X, y)
+loader = DataLoader(dataset, batch_size=___, shuffle=True)
+
+model = nn.Linear(5, 1, bias=False)
+opt = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+loss_fn = nn.MSELoss()
+
+for epoch in range(20):
+    epoch_loss = 0
+    for batch_x, batch_y in loader:
+        pred = model(batch_x).squeeze()
+        loss = loss_fn(pred, batch_y)
+        opt.zero_grad(); loss.backward(); opt.step()
+        epoch_loss += loss.item()
+    
+    if (epoch+1) % 5 == 0:
+        avg_loss = epoch_loss / len(loader)
+        w = model.weight.data.squeeze()
+        print(f"Epoch {epoch+1:2d}: loss={avg_loss:.4f}  w={w.tolist()}")
+
+print(f"\\nAppris: {model.weight.data.squeeze().tolist()}")
+print(f"Réel:   {W_true.tolist()}")`,
+        solution: `import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
+
+torch.manual_seed(42)
+
+X = torch.randn(1000, 5)
+W_true = torch.tensor([1.0, -2.0, 3.0, -1.0, 0.5])
+y = X @ W_true + 0.1 * torch.randn(1000)
+
+dataset = TensorDataset(X, y)
+loader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+model = nn.Linear(5, 1, bias=False)
+opt = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+loss_fn = nn.MSELoss()
+
+for epoch in range(20):
+    epoch_loss = 0
+    for batch_x, batch_y in loader:
+        pred = model(batch_x).squeeze()
+        loss = loss_fn(pred, batch_y)
+        opt.zero_grad(); loss.backward(); opt.step()
+        epoch_loss += loss.item()
+    
+    if (epoch+1) % 5 == 0:
+        avg_loss = epoch_loss / len(loader)
+        w = model.weight.data.squeeze()
+        print(f"Epoch {epoch+1:2d}: loss={avg_loss:.4f}  w={w.tolist()}")
+
+print(f"\\nAppris: {model.weight.data.squeeze().tolist()}")
+print(f"Réel:   {W_true.tolist()}")`,
+        hints: [
+          'batch_size=32 est un bon défaut',
+          'DataLoader gère le shuffling et le batching automatiquement',
         ],
         completed: false,
       },
@@ -1977,47 +2772,71 @@ for epoch in range(200):
 import torch.nn as nn
 import torch.optim as optim
 
-# ══ Descente de Gradient — SGD, Momentum, Adam ══
+# ══════════════════════════════════════════════════════════════
+# Descente de Gradient — Ch. 6 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
 torch.manual_seed(42)
 
-# Données synthétiques : y = 3x + 2 + bruit
 x = torch.randn(200, 1)
 y = 3 * x + 2 + torch.randn(200, 1) * 0.1
 
+# ── 1. Les 3 optimiseurs principaux ──
 model = nn.Linear(1, 1)
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+print("═══ Optimiseurs PyTorch ═══")
+
+optimizers = {
+    'SGD':      optim.SGD(model.parameters(), lr=0.01),
+    'Momentum': optim.SGD(model.parameters(), lr=0.01, momentum=0.9),
+    'Adam':     optim.Adam(model.parameters(), lr=0.001),
+}
+
+for name, opt in optimizers.items():
+    print(f"  {name}: {opt.__class__.__name__}")
+
+# ── 2. Boucle d'entraînement typique ──
+print("\\n═══ Entraînement avec Adam ═══")
+model = nn.Linear(1, 1)
+opt = optim.Adam(model.parameters(), lr=0.01)
 loss_fn = nn.MSELoss()
 
-# Boucle d'entraînement
 for epoch in range(200):
-    # Mini-batch (ici on utilise tout le dataset)
     pred = model(x)
     loss = loss_fn(pred, y)
-    
-    # Gradient → mise à jour
-    optimizer.zero_grad()
+    opt.zero_grad()
     loss.backward()
-    optimizer.step()
+    opt.step()
     
     if (epoch + 1) % 40 == 0:
         w, b = model.weight.item(), model.bias.item()
-        print(f"Epoch {epoch+1:3d}: loss={loss.item():.4f}, y={w:.3f}x + {b:.3f}")
+        print(f"  Epoch {epoch+1:3d}: loss={loss.item():.4f}, y={w:.3f}x + {b:.3f}")
 
 w, b = model.weight.item(), model.bias.item()
 print(f"\\n✓ Appris : y = {w:.2f}x + {b:.2f}")
 print(f"  Réel  : y = 3.00x + 2.00")
+
+# ── 3. Learning Rate Schedule ──
+print("\\n═══ Learning Rate Schedule ═══")
+model2 = nn.Linear(1, 1)
+opt2 = optim.Adam(model2.parameters(), lr=0.01)
+scheduler = optim.lr_scheduler.StepLR(opt2, step_size=50, gamma=0.5)
+for epoch in range(200):
+    loss = loss_fn(model2(x), y)
+    opt2.zero_grad(); loss.backward(); opt2.step()
+    scheduler.step()
+    if (epoch+1) % 50 == 0:
+        print(f"  Epoch {epoch+1}: lr = {scheduler.get_last_lr()[0]:.6f}")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 7 — BACKPROPAGATION
+  // MODULE 7 — BACKPROPAGATION (Ch. 7)
   // ═══════════════════════════════════════
   {
     id: 'backprop',
     title: 'Backpropagation & Autograd',
     shortTitle: 'Backprop',
-    description: 'Propagation arrière du gradient — le cœur de l\'apprentissage.',
+    description: 'Règle de la chaîne, forward/backward pass, He initialization, vanishing gradients (Ch. 7 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['gradient-descent'],
@@ -2025,40 +2844,93 @@ print(f"  Réel  : y = 3.00x + 2.00")
     theory: [
       {
         type: 'text',
-        content: `La **backpropagation** est l'algorithme qui calcule efficacement les gradients dans un réseau profond. Elle utilise la **règle de la chaîne** pour propager le gradient de la perte depuis la sortie jusqu'aux entrées, couche par couche.\n\nLe processus se déroule en deux passes :\n1. **Forward pass** : calcul de toutes les activations h₁, h₂, ... et de la perte\n2. **Backward pass** : propagation des gradients de la sortie vers l'entrée`,
+        content: `## 7.1 — Forward pass & Backward pass\n\nLa **backpropagation** calcule efficacement les gradients ∂L/∂ϕ pour tous les paramètres du réseau. Le processus :\n\n1. **Forward pass** : on calcule séquentiellement f₀ → h₁ → f₁ → h₂ → ... → fₖ → perte ℓ\n2. **Backward pass** : on propage ∂ℓ/∂fₖ de la sortie vers l'entrée via la **règle de la chaîne**`,
+      },
+      {
+        type: 'diagram',
+        content: `  FORWARD  →  →  →  →  →  →  →  →  →  →  →  →
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  x ──▶ f₀ ──▶ h₁ ──▶ f₁ ──▶ h₂ ──▶ f₂ ──▶ ℓ
+        β₀,Ω₀  ReLU   β₁,Ω₁  ReLU   β₂,Ω₂
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ←  ←  ←  ←  ←  ←  ←  ←  ←  ←  ←  ←  BACKWARD
+  ∂ℓ/∂x  ∂ℓ/∂f₀  ∂ℓ/∂h₁  ∂ℓ/∂f₁  ∂ℓ/∂h₂  ∂ℓ/∂f₂
+
+  → Chaque ∂ℓ/∂fₖ donne ∂ℓ/∂βₖ et ∂ℓ/∂Ωₖ`,
+        label: 'Fig. 7.3 — Forward (→) et Backward (←)',
+      },
+      {
+        type: 'text',
+        content: `## 7.2 — Règle de la chaîne\n\nConsidérons un toy example :\n\ny = cos(sin(x) + exp(x))\n\nLe forward décompose en étapes : f = sin(x), g = exp(x), h = f + g, y = cos(h).\nLe backward applique dy/dx = dy/dh · dh/df · df/dx + dy/dh · dh/dg · dg/dx.`,
       },
       {
         type: 'equation',
-        content: '\\frac{\\partial \\ell}{\\partial \\mathbf{f}_k} = \\frac{\\partial \\mathbf{h}_{k+1}}{\\partial \\mathbf{f}_k} \\cdot \\frac{\\partial \\mathbf{f}_{k+1}}{\\partial \\mathbf{h}_{k+1}} \\cdot \\frac{\\partial \\ell}{\\partial \\mathbf{f}_{k+1}}',
-        label: 'Règle de la chaîne (Backprop)',
+        content: '\\frac{\\partial \\ell}{\\partial \\mathbf{f}_k} = \\underbrace{\\frac{\\partial \\mathbf{h}_{k+1}}{\\partial \\mathbf{f}_k}}_{\\text{Jacobien ReLU}} \\cdot \\underbrace{\\frac{\\partial \\mathbf{f}_{k+1}}{\\partial \\mathbf{h}_{k+1}}}_{= \\boldsymbol{\\Omega}_{k+1}} \\cdot \\underbrace{\\frac{\\partial \\ell}{\\partial \\mathbf{f}_{k+1}}}_{\\text{récursion}}',
+        label: 'Éq. 7.13 — Récursion backward (couche k)',
         highlightVar: 'grad',
       },
       {
         type: 'text',
-        content: `Pour chaque couche k, on calcule les gradients par rapport aux poids **Ωk** et biais **βk** :\n\n- ∂ℓ/∂Ωk = ∂ℓ/∂fk · hkᵀ\n- ∂ℓ/∂βk = ∂ℓ/∂fk\n\nLa dérivée de ReLU est simple : elle vaut 1 si l'entrée > 0, et 0 sinon.`,
+        content: `## 7.3 — Gradients par rapport aux paramètres\n\nUne fois ∂ℓ/∂fₖ calculé (via la récursion backward), on obtient directement les gradients pour les poids et biais de la couche k :`,
       },
       {
         type: 'equation',
-        content: '\\frac{\\partial \\, \\text{ReLU}(z)}{\\partial z} = \\begin{cases} 0 & z < 0 \\\\ 1 & z > 0 \\end{cases}',
-        label: 'Dérivée du ReLU',
-      },
-      {
-        type: 'callout',
-        content: '⚡ PyTorch implémente la backpropagation automatiquement via **Autograd**. Il suffit d\'appeler `loss.backward()` et les gradients sont calculés pour tous les paramètres avec `requires_grad=True`.',
+        content: '\\begin{aligned} \\frac{\\partial \\ell}{\\partial \\boldsymbol{\\beta}_k} &= \\frac{\\partial \\ell}{\\partial \\mathbf{f}_k} \\\\[6pt] \\frac{\\partial \\ell}{\\partial \\boldsymbol{\\Omega}_k} &= \\frac{\\partial \\ell}{\\partial \\mathbf{f}_k} \\cdot \\mathbf{h}_k^T \\end{aligned}',
+        label: 'Éq. 7.24–7.25 — Gradients des paramètres',
+        highlightVar: 'grad',
       },
       {
         type: 'text',
-        content: `L'**initialisation des paramètres** est cruciale. Si les poids sont trop grands, les gradients explosent. Trop petits, ils s'évanouissent. L'initialisation de **He** (pour ReLU) choisit les poids avec une variance de 2/n, où n est le nombre d'entrées.`,
+        content: `## 7.4 — Dérivée du ReLU\n\nLa dérivée de ReLU est triviale : elle crée une matrice diagonale avec 1 pour les entrées positives et 0 pour les négatives. C'est ce qui rend le backprop avec ReLU très rapide :`,
+      },
+      {
+        type: 'equation',
+        content: '\\frac{\\partial \\, \\text{ReLU}(z)}{\\partial z} = \\begin{cases} 0 & z < 0 \\\\ 1 & z > 0 \\end{cases} \\qquad \\Rightarrow \\qquad \\frac{\\partial \\mathbf{h}}{\\partial \\mathbf{f}} = \\text{diag}\\left[\\mathbb{I}[f_d > 0]\\right]',
+        label: 'Éq. 7.15 — Jacobien du ReLU',
+      },
+      {
+        type: 'text',
+        content: `## 7.5 — Algorithme complet de backpropagation\n\n**Forward pass** : stocker toutes les pré-activations fₖ et activations hₖ\n**Backward pass** :\n1. Calculer ∂ℓ/∂fₖ pour K (dernière couche)\n2. Pour k = K−1, ..., 0 : propager ∂ℓ/∂fₖ\n3. À chaque couche : extraire ∂ℓ/∂βₖ et ∂ℓ/∂Ωₖ\n\n**Complexité** : O(paramètres) — identique au forward pass !`,
+      },
+      {
+        type: 'callout',
+        content: '⚡ **Autograd** de PyTorch implémente la **différentiation algorithmique** (reverse mode). Le graphe de calcul est construit automatiquement pendant le forward. Un seul appel à \\`loss.backward()\\` calcule TOUS les gradients. C\'est la version automatique de la backpropagation.',
+      },
+      {
+        type: 'text',
+        content: `## 7.6 — Initialisation de He\n\nSi les poids sont trop grands → les gradients **explosent**. Trop petits → ils **s'évanouissent**. L'initialisation de **He** (2015) choisit la variance des poids pour que les activations ReLU gardent une variance constante :`,
+      },
+      {
+        type: 'equation',
+        content: '\\sigma^2 = \\frac{2}{D_h} \\qquad \\Rightarrow \\qquad \\omega_{ij} \\sim \\mathcal{N}\\!\\left(0, \\frac{2}{D_h}\\right)',
+        label: 'Éq. 7.40 — Initialisation de He (pour ReLU)',
+        highlightVar: 'hidden',
+      },
+      {
+        type: 'diagram',
+        content: `  Sans bonne init                Avec He init
+  ──────────────────            ──────────────────
+  Couche 1:  σ = 1.0            Couche 1:  σ = 0.71
+  Couche 5:  σ = 0.001          Couche 5:  σ = 0.68
+  Couche 10: σ = 0.000001       Couche 10: σ = 0.65
+  → Gradients ÉVANOUISSENT !    → Gradients STABLES ✓
+  
+  Formule : σ² = 2/Dₕ (facteur 2 pour ReLU qui clippe 50%)
+  PyTorch : nn.init.kaiming_normal_(w, nonlinearity='relu')`,
+        label: 'Fig. 7.8 — Variance des activations avec/sans He init',
+      },
+      {
+        type: 'callout',
+        content: '🧠 **Résumé Ch. 7** :\n(1) Forward = calculer et stocker les activations couche par couche\n(2) Backward = propager ∂ℓ/∂f de la sortie vers l\'entrée via la règle de la chaîne\n(3) Complexité backward = complexité forward (remarquable !)\n(4) PyTorch Autograd fait tout automatiquement\n(5) He init : σ² = 2/Dₕ pour stabiliser les gradients profonds',
       },
     ],
     exercises: [
       {
         id: 'bp-ex1',
-        title: 'Autograd en action',
-        instructions: 'Utilisez PyTorch Autograd pour calculer les gradients d\'une expression. Vérifiez les résultats manuellement.',
+        title: '💻 Pratique — Autograd en action',
+        instructions: 'Utilisez PyTorch Autograd pour calculer les gradients d\'une expression y = w*x + b, loss = (y-10)². Vérifiez manuellement avec la règle de la chaîne.',
         starterCode: `import torch
 
-# Variables avec suivi du gradient
 x = torch.tensor(2.0, requires_grad=True)
 w = torch.tensor(3.0, requires_grad=True)
 b = torch.tensor(1.0, requires_grad=True)
@@ -2077,8 +2949,7 @@ print(f"\\n∂loss/∂w = {w.grad.item():.2f}")
 print(f"∂loss/∂x = {x.grad.item():.2f}")
 print(f"∂loss/∂b = {b.grad.item():.2f}")
 
-# Vérification manuelle :
-# ∂loss/∂y = 2(y-10), ∂y/∂w = x → ∂loss/∂w = 2(y-10)*x
+# Vérification manuelle : ∂loss/∂w = 2(y-10) * ∂y/∂w = 2(y-10) * x
 print(f"\\nVérification: 2*(y-10)*x = {2*(y.item()-10)*x.item():.2f}")`,
         solution: `import torch
 
@@ -2106,51 +2977,265 @@ print(f"\\nVérification: 2*(y-10)*x = {2*(y.item()-10)*x.item():.2f}")`,
         ],
         completed: false,
       },
+      {
+        id: 'bp-th1',
+        title: '🧠 Théorie — Backprop manuelle (toy example)',
+        instructions: 'Implémentez le forward et backward pass manuellement (sans autograd) pour un réseau à 1 couche cachée. Vérifiez contre PyTorch.',
+        starterCode: `import torch
+import torch.nn as nn
+
+torch.manual_seed(0)
+
+# Réseau : x(1) → h(3) → y(1), ReLU, loss = MSE
+D_i, D_h, D_o = 1, 3, 1
+
+# Paramètres
+W1 = torch.randn(D_h, D_i, requires_grad=True)  # (3,1)
+b1 = torch.randn(D_h, requires_grad=True)        # (3,)
+W2 = torch.randn(D_o, D_h, requires_grad=True)   # (1,3)
+b2 = torch.randn(D_o, requires_grad=True)         # (1,)
+
+x = torch.tensor([[1.5]])  # (1,1)
+y_true = torch.tensor([[2.0]])
+
+# ── Forward pass (manuel) ──
+f0 = (W1 @ x.T).squeeze() + b1   # pré-activation
+h1 = torch.relu(f0)               # activation
+f1 = (W2 @ h1.unsqueeze(1)).squeeze() + b2  # sortie
+loss = (f1 - y_true.squeeze()) ** 2
+
+print(f"f0 = {f0.detach().tolist()}")
+print(f"h1 = {h1.detach().tolist()}")
+print(f"f1 = {f1.detach().item():.4f}")
+print(f"loss = {loss.detach().item():.4f}")
+
+# ── Backward pass (manuel) ──
+dl_df1 = 2 * (f1 - y_true.squeeze())        # ∂L/∂f₁
+dl_dW2 = ___  # dl_df1 * h1ᵀ
+dl_db2 = ___  # dl_df1
+dl_dh1 = ___  # W2ᵀ * dl_df1
+dl_df0 = dl_dh1.squeeze() * (f0 > 0).float()  # ReLU mask
+dl_dW1 = dl_df0.unsqueeze(1) @ x  # ∂L/∂W₁
+dl_db1 = dl_df0                    # ∂L/∂b₁
+
+# Vérifier avec autograd
+loss.backward()
+print(f"\\n{'Param':>6} │ {'Manuel':>10} │ {'Autograd':>10} │ {'Match':>5}")
+print(f"{'─'*6}─┼─{'─'*10}─┼─{'─'*10}─┼─{'─'*5}")
+for name, manual, auto in [('W2', dl_dW2, W2.grad),
+                             ('b2', dl_db2, b2.grad),
+                             ('W1', dl_dW1, W1.grad),
+                             ('b1', dl_db1, b1.grad)]:
+    m = manual.detach().flatten()
+    a = auto.flatten()
+    match = torch.allclose(m, a, atol=1e-5)
+    print(f"{name:>6} │ {m.tolist()} │ {a.tolist()} │ {'✓' if match else '✗'}")`,
+        solution: `import torch
+import torch.nn as nn
+
+torch.manual_seed(0)
+
+D_i, D_h, D_o = 1, 3, 1
+
+W1 = torch.randn(D_h, D_i, requires_grad=True)
+b1 = torch.randn(D_h, requires_grad=True)
+W2 = torch.randn(D_o, D_h, requires_grad=True)
+b2 = torch.randn(D_o, requires_grad=True)
+
+x = torch.tensor([[1.5]])
+y_true = torch.tensor([[2.0]])
+
+f0 = (W1 @ x.T).squeeze() + b1
+h1 = torch.relu(f0)
+f1 = (W2 @ h1.unsqueeze(1)).squeeze() + b2
+loss = (f1 - y_true.squeeze()) ** 2
+
+print(f"f0 = {f0.detach().tolist()}")
+print(f"h1 = {h1.detach().tolist()}")
+print(f"f1 = {f1.detach().item():.4f}")
+print(f"loss = {loss.detach().item():.4f}")
+
+dl_df1 = 2 * (f1 - y_true.squeeze())
+dl_dW2 = dl_df1 * h1.unsqueeze(0)
+dl_db2 = dl_df1
+dl_dh1 = W2.T * dl_df1
+dl_df0 = dl_dh1.squeeze() * (f0 > 0).float()
+dl_dW1 = dl_df0.unsqueeze(1) @ x
+dl_db1 = dl_df0
+
+loss.backward()
+print(f"\\n{'Param':>6} │ {'Manuel':>10} │ {'Autograd':>10} │ {'Match':>5}")
+print(f"{'─'*6}─┼─{'─'*10}─┼─{'─'*10}─┼─{'─'*5}")
+for name, manual, auto in [('W2', dl_dW2, W2.grad),
+                             ('b2', dl_db2, b2.grad),
+                             ('W1', dl_dW1, W1.grad),
+                             ('b1', dl_db1, b1.grad)]:
+    m = manual.detach().flatten()
+    a = auto.flatten()
+    match = torch.allclose(m, a, atol=1e-5)
+    print(f"{name:>6} │ {m.tolist()} │ {a.tolist()} │ {'✓' if match else '✗'}")`,
+        hints: [
+          '∂L/∂W₂ = ∂L/∂f₁ · h₁ᵀ (produit extérieur)',
+          '∂L/∂h₁ = W₂ᵀ · ∂L/∂f₁',
+          '∂L/∂f₀ = ∂L/∂h₁ · I[f₀>0] (masque ReLU)',
+        ],
+        completed: false,
+      },
+      {
+        id: 'bp-pr2',
+        title: '💻 Pratique — He init vs mauvaise init',
+        instructions: 'Comparez l\'entraînement d\'un réseau profond (10 couches) avec initialisation standard vs He. Observez les gradients.',
+        starterCode: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+def make_deep_net(init_type='default'):
+    layers = []
+    dims = [1] + [50]*10 + [1]
+    for i in range(len(dims)-1):
+        layer = nn.Linear(dims[i], dims[i+1])
+        if init_type == 'he':
+            nn.init.kaiming_normal_(layer.weight, nonlinearity='relu')
+        elif init_type == 'small':
+            nn.init.normal_(layer.weight, std=0.01)
+        layers.append(layer)
+        if i < len(dims) - 2:
+            layers.append(nn.ReLU())
+    return nn.Sequential(*layers)
+
+x = torch.randn(32, 1)
+y = torch.sin(x)
+
+for init in ['small', 'default', 'he']:
+    model = make_deep_net(init)
+    loss = nn.MSELoss()(model(x), y)
+    loss.backward()
+    
+    # Gradient de la PREMIÈRE couche
+    grad_norm = model[0].weight.grad.norm().item()
+    # Activation de la DERNIÈRE couche
+    out_std = model(x).std().item()
+    
+    print(f"Init {init:>8s}: grad_norm_L0 = {grad_norm:.6f}, out_std = {out_std:.4f}")
+
+print(f"\\n→ 'he' garde les gradients ni trop grands ni trop petits !")`,
+        solution: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+def make_deep_net(init_type='default'):
+    layers = []
+    dims = [1] + [50]*10 + [1]
+    for i in range(len(dims)-1):
+        layer = nn.Linear(dims[i], dims[i+1])
+        if init_type == 'he':
+            nn.init.kaiming_normal_(layer.weight, nonlinearity='relu')
+        elif init_type == 'small':
+            nn.init.normal_(layer.weight, std=0.01)
+        layers.append(layer)
+        if i < len(dims) - 2:
+            layers.append(nn.ReLU())
+    return nn.Sequential(*layers)
+
+x = torch.randn(32, 1)
+y = torch.sin(x)
+
+for init in ['small', 'default', 'he']:
+    model = make_deep_net(init)
+    loss = nn.MSELoss()(model(x), y)
+    loss.backward()
+    
+    grad_norm = model[0].weight.grad.norm().item()
+    out_std = model(x).std().item()
+    
+    print(f"Init {init:>8s}: grad_norm_L0 = {grad_norm:.6f}, out_std = {out_std:.4f}")
+
+print(f"\\n→ 'he' garde les gradients ni trop grands ni trop petits !")`,
+        hints: [
+          'nn.init.kaiming_normal_ implémente He init',
+          'Avec std=0.01 les gradients seront quasi-nuls (vanishing)',
+          'He init utilise σ² = 2/fan_in pour ReLU',
+        ],
+        completed: false,
+      },
     ],
     codeTemplate: `import torch
+import torch.nn as nn
 
-# ══ Backpropagation — Autograd ══
+# ══════════════════════════════════════════════════════════════
+# Backpropagation — Ch. 7 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
-# ── 1. Calcul simple ──
+# ── 1. Autograd simple ──
+print("═══ Autograd ═══")
 x = torch.tensor(2.0, requires_grad=True)
 w = torch.tensor(3.0, requires_grad=True)
 b = torch.tensor(1.0, requires_grad=True)
 
-y = w * x + b        # Forward
-loss = (y - 10) ** 2  # Perte
+y = w * x + b
+loss = (y - 10) ** 2
 
-print(f"y = w·x + b = {y.item():.2f}")
-print(f"loss = (y - 10)² = {loss.item():.2f}")
+loss.backward()
+print(f"  y = {y.item():.2f}, loss = {loss.item():.2f}")
+print(f"  ∂loss/∂w = {w.grad.item():.2f}")
+print(f"  ∂loss/∂x = {x.grad.item():.2f}")
+print(f"  ∂loss/∂b = {b.grad.item():.2f}")
 
-loss.backward()       # Backward
-
-print(f"\\n∂loss/∂w = {w.grad.item():.2f}")
-print(f"∂loss/∂x = {x.grad.item():.2f}")
-print(f"∂loss/∂b = {b.grad.item():.2f}")
-
-# ── 2. Graphe de calcul plus complexe ──
+# ── 2. Graphe de calcul complexe ──
+print("\\n═══ Graphe complexe ═══")
 a = torch.tensor(1.5, requires_grad=True)
-b = torch.tensor(2.0, requires_grad=True)
+b2 = torch.tensor(2.0, requires_grad=True)
 
-c = a * b           # c = 3.0
-d = torch.relu(c - 2.5)  # d = ReLU(0.5) = 0.5
-e = d ** 2           # e = 0.25
+c = a * b2
+d = torch.relu(c - 2.5)
+e = d ** 2
 
 e.backward()
-print(f"\\n── Graphe complexe ──")
-print(f"∂e/∂a = {a.grad.item():.4f}")
-print(f"∂e/∂b = {b.grad.item():.4f}")
+print(f"  e = {e.item():.4f}")
+print(f"  ∂e/∂a = {a.grad.item():.4f}")
+print(f"  ∂e/∂b = {b2.grad.item():.4f}")
+
+# ── 3. He Initialization ──
+print("\\n═══ He Init ═══")
+D = 256
+layer = nn.Linear(D, D)
+nn.init.kaiming_normal_(layer.weight, nonlinearity='relu')
+print(f"  E[w²] = {(layer.weight**2).mean().item():.6f}")
+print(f"  2/D   = {2/D:.6f}")
+print(f"  → {'✓ Match !' if abs((layer.weight**2).mean().item() - 2/D) < 0.01 else '✗'}")
+
+# ── 4. Gradient flow dans un réseau profond ──
+print("\\n═══ Gradient Flow (10 couches) ═══")
+model = nn.Sequential(*[
+    layer for D in [1] + [50]*10 + [1]
+    for layer in [nn.Linear(D, 50), nn.ReLU()]
+][:-1])
+# He init
+for m in model.modules():
+    if isinstance(m, nn.Linear):
+        nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
+
+x = torch.randn(32, 1)
+out = model(x)
+loss = out.mean()
+loss.backward()
+
+for i, m in enumerate(model):
+    if isinstance(m, nn.Linear):
+        print(f"  Layer {i}: grad_norm = {m.weight.grad.norm().item():.6f}")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 8 — RÉGULARISATION
+  // MODULE 8 — RÉGULARISATION (Ch. 9)
   // ═══════════════════════════════════════
   {
     id: 'regularization',
     title: 'Régularisation & Généralisation',
     shortTitle: 'Régular.',
-    description: 'L2, Dropout, Data Augmentation, Early Stopping — éviter le surapprentissage.',
+    description: 'Biais-Variance, L2/Weight Decay, Dropout, BatchNorm, Early Stopping, Data Augmentation (Ch. 9 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['backprop'],
@@ -2158,91 +3243,269 @@ print(f"∂e/∂b = {b.grad.item():.4f}")
     theory: [
       {
         type: 'text',
-        content: `Le **surapprentissage** (overfitting) se produit quand le modèle mémorise les données d'entraînement au lieu d'apprendre des patterns généraux. La **régularisation** ajoute des contraintes pour favoriser la généralisation.\n\nSources d'erreur :\n- **Biais** : le modèle est trop simple (underfitting)\n- **Variance** : le modèle est trop sensible aux données (overfitting)\n- **Bruit** : erreur irréductible dans les données`,
+        content: `## 9.1 — Biais, Variance et Bruit\n\nL'erreur de généralisation se décompose en trois termes :\n\n- **Biais** : erreur due à un modèle trop simple (under-fitting)\n- **Variance** : sensibilité aux données d'entraînement (over-fitting)\n- **Bruit** : erreur irréductible dans les données\n\nUn modèle trop simple a un **biais élevé**. Un modèle trop complexe a une **variance élevée**. Le but est de trouver le juste milieu.`,
+      },
+      {
+        type: 'diagram',
+        content: `  Erreur ↑
+    │\\
+    │ \\  Biais
+    │  \\          ╱ Variance
+    │   \\       ╱
+    │    \\    ╱
+    │     \\╱──── Erreur totale
+    │     ╱\\
+    │   ╱   \\
+    └──────────────── Complexité du modèle →
+      Simple              Complexe
+    (underfitting)      (overfitting)
+                   ↑
+            Sweet spot !`,
+        label: 'Fig. 9.2 — Compromis Biais-Variance',
+      },
+      {
+        type: 'text',
+        content: `## 9.2 — Régularisation L2 (Weight Decay)\n\nOn ajoute un terme qui pénalise les **poids trop grands**. Cela force le modèle à utiliser des poids plus petits → solutions plus lisses → meilleure généralisation. En pratique, c'est le paramètre \`weight_decay\` de l'optimiseur :`,
       },
       {
         type: 'equation',
-        content: '\\mathcal{L}_{reg} = \\mathcal{L}_{data} + \\lambda \\| \\boldsymbol{\\phi} \\|_2^2',
-        label: 'Régularisation L2 (Weight Decay)',
+        content: '\\mathcal{L}_{\\text{reg}} = \\underbrace{\\mathcal{L}_{\\text{data}}}_{\\text{MSE ou CE}} + \\underbrace{\\frac{\\lambda}{2} \\| \\boldsymbol{\\phi} \\|_2^2}_{\\text{pénalité L2}}',
+        label: 'Éq. 9.3 — Régularisation L2',
         highlightVar: 'loss',
       },
       {
         type: 'text',
-        content: `Le **Dropout** désactive aléatoirement une fraction p des neurones pendant l'entraînement, forçant le réseau à ne pas dépendre d'un seul neurone. À l'inférence, tous les neurones sont actifs mais leurs sorties sont multipliées par (1-p).\n\n**Early Stopping** : on surveille la perte de validation et on arrête l'entraînement quand elle commence à augmenter.\n\n**Data Augmentation** : on augmente artificiellement le dataset (rotations, flips, crops pour les images).`,
+        content: `## 9.3 — Dropout\n\nPendant l'entraînement, on **désactive aléatoirement** une fraction p des neurones. Cela force le réseau à ne pas dépendre d'un neurone unique → équivalent approximatif d'un **ensemble** de sous-réseaux.\n\nÀ l'inférence (\`model.eval()\`), tous les neurones sont actifs mais multipliés par (1−p) pour compenser.`,
       },
       {
         type: 'equation',
-        content: '\\tilde{h}_k = h_k \\cdot m_k \\quad \\text{où } m_k \\sim \\text{Bernoulli}(1-p)',
-        label: 'Dropout (pendant l\'entraînement)',
+        content: '\\tilde{h}_d = h_d \\cdot m_d \\quad \\text{où } m_d \\sim \\text{Bernoulli}(1-p)',
+        label: 'Éq. 9.14 — Dropout mask',
+      },
+      {
+        type: 'text',
+        content: `## 9.4 — Batch Normalization\n\nNormalise les activations de chaque couche pour avoir **μ=0, σ=1** sur le mini-batch, puis applique un rescaling appris γ,β. Agit comme régularisateur ET accélérateur :`,
+      },
+      {
+        type: 'equation',
+        content: '\\hat{h}_d = \\gamma_d \\cdot \\frac{h_d - \\mu_{\\mathcal{B}}}{\\sqrt{\\sigma_{\\mathcal{B}}^2 + \\epsilon}} + \\beta_d',
+        label: 'Éq. — Batch Normalization',
+      },
+      {
+        type: 'text',
+        content: `## 9.5 — Autres techniques\n\n- **Early Stopping** : surveiller la loss de validation, arrêter quand elle augmente\n- **Data Augmentation** : créer des exemples artificiels (rotations, flips, crops, color jitter)\n- **Label Smoothing** : remplacer les labels one-hot par des soft labels (1 → 0.9, 0 → 0.1/K)\n- **Weight Noise / Gradient Noise** : ajouter du bruit pendant l'entraînement`,
       },
       {
         type: 'callout',
-        content: '🧠 La **Batch Normalization** normalise les activations de chaque couche pour avoir une moyenne de 0 et une variance de 1. Elle agit à la fois comme régularisation et accélérateur d\'entraînement.',
+        content: '💡 **Recette anti-overfitting** :\n1. Plus de **données** (data augmentation)\n2. **Weight Decay** (λ = 1e-4 ou 1e-5)\n3. **Dropout** (p = 0.1 à 0.5)\n4. **Early Stopping** (patience 5-10 epochs)\n5. **Batch Norm** (accélère + régularise)\n6. Réduire la **taille du modèle** (dernier recours)',
       },
     ],
-    exercises: [],
+    exercises: [
+      {
+        id: 'reg-ex1',
+        title: '💻 Pratique — Dropout train vs eval',
+        instructions: 'Montrez la différence entre model.train() et model.eval() avec Dropout. Vérifiez que les sorties sont stochastiques en train mode et déterministes en eval mode.',
+        starterCode: `import torch
+import torch.nn as nn
+
+model = nn.Sequential(
+    nn.Linear(10, 50), nn.ReLU(), nn.Dropout(0.5),
+    nn.Linear(50, 50), nn.ReLU(), nn.Dropout(0.5),
+    nn.Linear(50, 1)
+)
+
+x = torch.randn(1, 10)
+
+# Train mode → dropout actif → sorties différentes
+model.train()
+out1 = model(x).item()
+out2 = model(x).item()
+print(f"Train mode: {out1:.4f} vs {out2:.4f} → {'Différents ✓' if abs(out1-out2) > 1e-6 else 'ERREUR'}")
+
+# Eval mode → dropout désactivé → sorties identiques
+model.___()  # passer en eval
+out3 = model(x).item()
+out4 = model(x).item()
+print(f"Eval mode:  {out3:.4f} vs {out4:.4f} → {'Identiques ✓' if abs(out3-out4) < 1e-6 else 'ERREUR'}")`,
+        solution: `import torch
+import torch.nn as nn
+
+model = nn.Sequential(
+    nn.Linear(10, 50), nn.ReLU(), nn.Dropout(0.5),
+    nn.Linear(50, 50), nn.ReLU(), nn.Dropout(0.5),
+    nn.Linear(50, 1)
+)
+
+x = torch.randn(1, 10)
+
+model.train()
+out1 = model(x).item()
+out2 = model(x).item()
+print(f"Train mode: {out1:.4f} vs {out2:.4f} → {'Différents ✓' if abs(out1-out2) > 1e-6 else 'ERREUR'}")
+
+model.eval()
+out3 = model(x).item()
+out4 = model(x).item()
+print(f"Eval mode:  {out3:.4f} vs {out4:.4f} → {'Identiques ✓' if abs(out3-out4) < 1e-6 else 'ERREUR'}")`,
+        hints: [
+          'model.eval() désactive le dropout et la batch norm',
+          'model.train() les réactive',
+        ],
+        completed: false,
+      },
+      {
+        id: 'reg-ex2',
+        title: '💻 Pratique — Overfitting vs Régularisation',
+        instructions: 'Entraînez un modèle sur peu de données avec et sans régularisation. Observez l\'overfitting et l\'effet de weight decay + dropout.',
+        starterCode: `import torch
+import torch.nn as nn
+import torch.optim as optim
+
+torch.manual_seed(42)
+
+# Peu de données (overfitting garanti !)
+x_train = torch.randn(20, 1)
+y_train = torch.sin(x_train) + 0.1 * torch.randn(20, 1)
+x_test = torch.linspace(-4, 4, 100).unsqueeze(1)
+y_test = torch.sin(x_test)
+
+# Modèle SANS régularisation
+model_noreg = nn.Sequential(
+    nn.Linear(1, 100), nn.ReLU(),
+    nn.Linear(100, 100), nn.ReLU(),
+    nn.Linear(100, 1)
+)
+
+# Modèle AVEC régularisation
+model_reg = nn.Sequential(
+    nn.Linear(1, 100), nn.ReLU(), nn.Dropout(0.3),
+    nn.Linear(100, 100), nn.ReLU(), nn.Dropout(0.3),
+    nn.Linear(100, 1)
+)
+
+opt_noreg = optim.Adam(model_noreg.parameters(), lr=0.01)
+opt_reg = optim.Adam(model_reg.parameters(), lr=0.01, weight_decay=___)
+
+loss_fn = nn.MSELoss()
+
+for epoch in range(500):
+    for model, opt in [(model_noreg, opt_noreg), (model_reg, opt_reg)]:
+        model.train()
+        loss = loss_fn(model(x_train), y_train)
+        opt.zero_grad(); loss.backward(); opt.step()
+
+# Évaluation
+model_noreg.eval(); model_reg.eval()
+test_loss_noreg = loss_fn(model_noreg(x_test), y_test).item()
+test_loss_reg = loss_fn(model_reg(x_test), y_test).item()
+train_loss_noreg = loss_fn(model_noreg(x_train), y_train).item()
+train_loss_reg = loss_fn(model_reg(x_train), y_train).item()
+
+print(f"{'':>10} │ {'Train':>8} │ {'Test':>8} │ {'Gap':>8}")
+print(f"{'─'*10}─┼─{'─'*8}─┼─{'─'*8}─┼─{'─'*8}")
+print(f"{'No reg':>10} │ {train_loss_noreg:8.4f} │ {test_loss_noreg:8.4f} │ {test_loss_noreg-train_loss_noreg:8.4f}")
+print(f"{'Dropout+WD':>10} │ {train_loss_reg:8.4f} │ {test_loss_reg:8.4f} │ {test_loss_reg-train_loss_reg:8.4f}")`,
+        solution: `import torch
+import torch.nn as nn
+import torch.optim as optim
+
+torch.manual_seed(42)
+
+x_train = torch.randn(20, 1)
+y_train = torch.sin(x_train) + 0.1 * torch.randn(20, 1)
+x_test = torch.linspace(-4, 4, 100).unsqueeze(1)
+y_test = torch.sin(x_test)
+
+model_noreg = nn.Sequential(
+    nn.Linear(1, 100), nn.ReLU(),
+    nn.Linear(100, 100), nn.ReLU(),
+    nn.Linear(100, 1)
+)
+
+model_reg = nn.Sequential(
+    nn.Linear(1, 100), nn.ReLU(), nn.Dropout(0.3),
+    nn.Linear(100, 100), nn.ReLU(), nn.Dropout(0.3),
+    nn.Linear(100, 1)
+)
+
+opt_noreg = optim.Adam(model_noreg.parameters(), lr=0.01)
+opt_reg = optim.Adam(model_reg.parameters(), lr=0.01, weight_decay=1e-4)
+
+loss_fn = nn.MSELoss()
+
+for epoch in range(500):
+    for model, opt in [(model_noreg, opt_noreg), (model_reg, opt_reg)]:
+        model.train()
+        loss = loss_fn(model(x_train), y_train)
+        opt.zero_grad(); loss.backward(); opt.step()
+
+model_noreg.eval(); model_reg.eval()
+test_loss_noreg = loss_fn(model_noreg(x_test), y_test).item()
+test_loss_reg = loss_fn(model_reg(x_test), y_test).item()
+train_loss_noreg = loss_fn(model_noreg(x_train), y_train).item()
+train_loss_reg = loss_fn(model_reg(x_train), y_train).item()
+
+print(f"{'':>10} │ {'Train':>8} │ {'Test':>8} │ {'Gap':>8}")
+print(f"{'─'*10}─┼─{'─'*8}─┼─{'─'*8}─┼─{'─'*8}")
+print(f"{'No reg':>10} │ {train_loss_noreg:8.4f} │ {test_loss_noreg:8.4f} │ {test_loss_noreg-train_loss_noreg:8.4f}")
+print(f"{'Dropout+WD':>10} │ {train_loss_reg:8.4f} │ {test_loss_reg:8.4f} │ {test_loss_reg-train_loss_reg:8.4f}")`,
+        hints: [
+          'weight_decay=1e-4 est une bonne valeur par défaut',
+          'Le "gap" train-test mesure l\'overfitting',
+        ],
+        completed: false,
+      },
+    ],
     codeTemplate: `import torch
 import torch.nn as nn
 
-# ══ Régularisation ══
+# ══════════════════════════════════════════════════════════════
+# Régularisation — Ch. 9 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
 # ── 1. Weight Decay (L2) ──
-model = nn.Sequential(
-    nn.Linear(10, 50), nn.ReLU(),
-    nn.Linear(50, 1)
-)
-
-# Adam avec weight_decay = L2 regularization
+model = nn.Sequential(nn.Linear(10, 50), nn.ReLU(), nn.Linear(50, 1))
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
-print("✓ Weight decay activé (λ=0.01)")
+print("✓ Weight decay λ=0.01")
 
 # ── 2. Dropout ──
-model_with_dropout = nn.Sequential(
-    nn.Linear(10, 50),
-    nn.ReLU(),
-    nn.Dropout(p=0.3),    # 30% des neurones désactivés
-    nn.Linear(50, 50),
-    nn.ReLU(),
-    nn.Dropout(p=0.3),
+model_drop = nn.Sequential(
+    nn.Linear(10, 50), nn.ReLU(), nn.Dropout(p=0.3),
+    nn.Linear(50, 50), nn.ReLU(), nn.Dropout(p=0.3),
     nn.Linear(50, 1)
 )
 
-# En mode training vs eval
 x = torch.randn(1, 10)
-
-model_with_dropout.train()
-out1 = model_with_dropout(x)
-out2 = model_with_dropout(x)
-print(f"\\nTrain mode (dropout actif):")
-print(f"  Sortie 1: {out1.item():.4f}")
-print(f"  Sortie 2: {out2.item():.4f} (différent!)")
-
-model_with_dropout.eval()
-out3 = model_with_dropout(x)
-out4 = model_with_dropout(x)
-print(f"\\nEval mode (dropout désactivé):")
-print(f"  Sortie 1: {out3.item():.4f}")
-print(f"  Sortie 2: {out4.item():.4f} (identique!)")
+model_drop.train()
+print(f"\\nTrain: {model_drop(x).item():.4f} vs {model_drop(x).item():.4f} (différents)")
+model_drop.eval()
+print(f"Eval:  {model_drop(x).item():.4f} vs {model_drop(x).item():.4f} (identiques)")
 
 # ── 3. Batch Normalization ──
 bn_model = nn.Sequential(
-    nn.Linear(10, 50),
-    nn.BatchNorm1d(50),  # Normalise les activations
-    nn.ReLU(),
+    nn.Linear(10, 50), nn.BatchNorm1d(50), nn.ReLU(),
     nn.Linear(50, 1)
 )
 print(f"\\n✓ BatchNorm model: {sum(p.numel() for p in bn_model.parameters())} params")
+
+# ── 4. Ensemble des techniques ──
+full_model = nn.Sequential(
+    nn.Linear(10, 64), nn.BatchNorm1d(64), nn.ReLU(), nn.Dropout(0.2),
+    nn.Linear(64, 64), nn.BatchNorm1d(64), nn.ReLU(), nn.Dropout(0.2),
+    nn.Linear(64, 1)
+)
+print(f"✓ Full model: {sum(p.numel() for p in full_model.parameters())} params")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 9 — CNN
+  // MODULE 9 — CNN (Ch. 10)
   // ═══════════════════════════════════════
   {
     id: 'cnn',
     title: 'Réseaux Convolutifs (CNN)',
     shortTitle: 'CNN',
-    description: 'Convolutions 2D, invariance, équivariance, pooling — la vision par ordinateur.',
+    description: 'Convolutions 2D, invariance/équivariance, pooling, architectures classiques (Ch. 10 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['regularization'],
@@ -2250,55 +3513,100 @@ print(f"\\n✓ BatchNorm model: {sum(p.numel() for p in bn_model.parameters())} 
     theory: [
       {
         type: 'text',
-        content: `Les **CNN** exploitent une propriété clé des images : les patterns locaux (bords, textures) sont les mêmes quel que soit leur position. Deux concepts formalisent cette idée :\n\n- **Invariance** : f[t[x]] = f[x] — la sortie ne change pas sous une transformation (ex: classification)\n- **Équivariance** : f[t[x]] = t[f[x]] — la sortie se transforme de la même façon (ex: segmentation)`,
-      },
-      {
-        type: 'equation',
-        content: 'z_i = \\sum_{m} \\omega_m \\cdot x_{i+m}',
-        label: 'Convolution 1D (kernel de taille M)',
+        content: `## 10.1 — Invariance et Équivariance\n\nLes images ont une structure spatiale : les mêmes patterns (bords, textures) apparaissent partout. Deux concepts formalisent cette idée :\n\n- **Invariance** : f[t[x]] = f[x] — la sortie ne change pas (classification : "c'est un chat" peu importe la position)\n- **Équivariance** : f[t[x]] = t[f[x]] — la sortie se transforme identiquement (détection d'objets : bouger l'objet → bouger la boîte)`,
       },
       {
         type: 'text',
-        content: `La **convolution 2D** applique un filtre (kernel) qui glisse sur l'image. Ce filtre détecte des patterns locaux (bords, coins, textures). Les mêmes poids sont partagés partout (equivariance à la translation).\n\n**Pooling** (Max/Average) réduit la résolution spatiale et rend le réseau partiellement invariant à de petites translations.`,
+        content: `## 10.2 — Convolution 1D et 2D\n\nLa **convolution** applique un filtre (kernel) qui **glisse** sur l'entrée. Les mêmes poids sont partagés partout → **équivariance à la translation** et réduction massive du nombre de paramètres. La convolution 2D est le cœur des CNN :`,
       },
       {
         type: 'equation',
-        content: 'z_{ij} = \\sum_{m} \\sum_{n} \\omega_{mn} \\cdot x_{i+m, \\, j+n}',
-        label: 'Convolution 2D',
+        content: 'z_{ij} = \\sum_{m=0}^{M-1} \\sum_{n=0}^{N-1} \\omega_{mn} \\cdot x_{i+m, \\, j+n} + b',
+        label: 'Éq. 10.3 — Convolution 2D (kernel M×N)',
+      },
+      {
+        type: 'diagram',
+        content: `  Input (5×5)          Kernel (3×3)       Output (3×3)
+  ┌─┬─┬─┬─┬─┐         ┌─┬─┬─┐
+  │·│·│·│ │ │         │1│0│1│           ┌─┬─┬─┐
+  ├─┼─┼─┼─┼─┤    ∗    ├─┼─┼─┤    =     │ │ │ │
+  │·│·│·│ │ │         │0│1│0│           ├─┼─┼─┤
+  ├─┼─┼─┼─┼─┤         ├─┼─┼─┤           │ │ │ │
+  │·│·│·│ │ │         │1│0│1│           ├─┼─┼─┤
+  ├─┼─┼─┼─┼─┤         └─┴─┴─┘           │ │ │ │
+  │ │ │ │ │ │    ← 9 poids partagés     └─┴─┴─┘
+  ├─┼─┼─┼─┼─┤      partout !
+  │ │ │ │ │ │
+  └─┴─┴─┴─┴─┘    padding='same' → taille conservée`,
+        label: 'Fig. 10.5 — Convolution 2D sliding window',
+      },
+      {
+        type: 'text',
+        content: `## 10.3 — Canaux, Stride, Padding\n\n- **Canaux d'entrée Cᵢₙ** : image RGB → 3 canaux. Le kernel est 3D : (Cᵢₙ × K × K)\n- **Canaux de sortie Cₒᵤₜ** : nombre de filtres → feature maps. Paramètres = Cₒᵤₜ × Cᵢₙ × K × K\n- **Stride** : pas du glissement (stride=2 → divise la taille par 2)\n- **Padding** : ajout de zéros autour pour contrôler la taille de sortie`,
+      },
+      {
+        type: 'equation',
+        content: 'H_{\\text{out}} = \\left\\lfloor \\frac{H_{\\text{in}} + 2p - k}{s} \\right\\rfloor + 1',
+        label: 'Taille de sortie d\'une convolution',
+      },
+      {
+        type: 'text',
+        content: `## 10.4 — Pooling\n\n**Max Pooling** : prend le maximum dans chaque fenêtre → réduit la résolution + ajoute une petite **invariance à la translation**.\n**Average Pooling** : prend la moyenne.\n**Global Average Pooling** : une seule valeur par channel → remplace le Flatten+FC final.`,
+      },
+      {
+        type: 'text',
+        content: `## 10.5 — Architecture CNN typique\n\nEmpiler : [Conv → BatchNorm → ReLU → Pool]×N → Flatten → FC → Sortie\n\n- Les premières couches détectent des **features bas-niveau** (bords, coins)\n- Les couches profondes combinent en **features haut-niveau** (textures, objets)\n- En augmentant les canaux et réduisant la résolution spatiale :`,
+      },
+      {
+        type: 'diagram',
+        content: `  Input    Conv1+Pool  Conv2+Pool  Conv3+Pool  FC
+  ────────────────────────────────────────────────
+  28×28×1  → 14×14×16  → 7×7×32   → 3×3×64   → 10
+  
+  Résolution: ↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+  Channels:   ↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+  
+  Hiérarchie : bords → textures → parties → objets`,
+        label: 'Fig. — Progression spatiale dans un CNN',
       },
       {
         type: 'callout',
-        content: '⚡ Un CNN typique empile : Conv → ReLU → Pool → Conv → ReLU → Pool → Flatten → FC. Les premières couches détectent des features bas-niveau (bords), les dernières des features haut-niveau (visages, objets).',
+        content: '⚡ **Architectures célèbres** :\n• **LeNet-5** (1998) : 2 conv, 60K params → MNIST\n• **AlexNet** (2012) : 5 conv, 60M params → ImageNet revolution\n• **VGG** (2014) : 16-19 couches, pattern 3×3 → simple et profond\n• **GoogLeNet** (2014) : Inception modules → parallélisme\n• **ResNet** (2015) : Skip connections → 152+ couches',
       },
     ],
     exercises: [
       {
         id: 'cnn-ex1',
-        title: 'Construire un CNN pour MNIST',
-        instructions: 'Créez un CNN simple avec 2 couches convolutives pour classifier des images 28×28.',
+        title: '💻 Pratique — CNN pour MNIST',
+        instructions: 'Créez un CNN avec 2 couches conv pour classifier des images 28×28 (1 canal). Calculez les dimensions de chaque couche.',
         starterCode: `import torch
 import torch.nn as nn
 
 class SimpleCNN(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = ___  # 1 canal → 16 filtres, kernel 3
-        self.conv2 = ___  # 16 → 32 filtres, kernel 3
+        # Conv1: 1→16 channels, kernel 3, padding 1 → 28×28×16
+        # MaxPool: → 14×14×16
+        self.conv1 = ___
+        # Conv2: 16→32 channels, kernel 3, padding 1 → 14×14×32
+        # MaxPool: → 7×7×32
+        self.conv2 = ___
         self.pool = nn.MaxPool2d(2, 2)
-        self.fc = ___     # 32*7*7 → 10 classes
+        self.fc = ___   # 32*7*7 → 10
         self.relu = nn.ReLU()
     
     def forward(self, x):
-        x = self.pool(self.relu(self.conv1(x)))
-        x = self.pool(self.relu(self.conv2(x)))
+        x = self.pool(self.relu(self.conv1(x)))  # 28→14
+        x = self.pool(self.relu(self.conv2(x)))  # 14→7
         x = x.view(x.size(0), -1)  # flatten
         return self.fc(x)
 
 model = SimpleCNN()
-x = torch.randn(1, 1, 28, 28)
+x = torch.randn(4, 1, 28, 28)
 out = model(x)
-print(f"Input: {x.shape}")
-print(f"Output: {out.shape}")`,
+print(f"Input:  {x.shape}")
+print(f"Output: {out.shape}")
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")`,
         solution: `import torch
 import torch.nn as nn
 
@@ -2318,10 +3626,11 @@ class SimpleCNN(nn.Module):
         return self.fc(x)
 
 model = SimpleCNN()
-x = torch.randn(1, 1, 28, 28)
+x = torch.randn(4, 1, 28, 28)
 out = model(x)
-print(f"Input: {x.shape}")
-print(f"Output: {out.shape}")`,
+print(f"Input:  {x.shape}")
+print(f"Output: {out.shape}")
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")`,
         hints: [
           'nn.Conv2d(in_channels, out_channels, kernel_size, padding=1)',
           'Après 2 MaxPool(2,2) sur 28×28 → 7×7',
@@ -2329,37 +3638,82 @@ print(f"Output: {out.shape}")`,
         ],
         completed: false,
       },
+      {
+        id: 'cnn-th1',
+        title: '🧠 Théorie — Comptage des paramètres conv',
+        instructions: 'Calculez le nombre de paramètres de chaque couche conv et comparez avec un réseau fully-connected équivalent.',
+        starterCode: `import torch
+import torch.nn as nn
+
+# CNN
+conv1 = nn.Conv2d(3, 16, 3, padding=1)   # RGB input
+conv2 = nn.Conv2d(16, 32, 3, padding=1)
+conv3 = nn.Conv2d(32, 64, 3, padding=1)
+
+# Fully-connected équivalent (32×32 RGB image → même features)
+fc1 = nn.Linear(3 * 32 * 32, 16 * 32 * 32)  # même "capacité"
+
+print("═══ CNN vs FC — Nombre de paramètres ═══")
+print(f"Conv1 (3→16, 3×3):  {sum(p.numel() for p in conv1.parameters()):>10,}")
+print(f"Conv2 (16→32, 3×3): {sum(p.numel() for p in conv2.parameters()):>10,}")
+print(f"Conv3 (32→64, 3×3): {sum(p.numel() for p in conv3.parameters()):>10,}")
+total_conv = sum(sum(p.numel() for p in m.parameters()) for m in [conv1, conv2, conv3])
+print(f"Total CNN:           {total_conv:>10,}")
+print(f"\\nFC1 (3*32*32 → 16*32*32): {sum(p.numel() for p in fc1.parameters()):>10,}")
+print(f"\\n→ Le FC a {sum(p.numel() for p in fc1.parameters()) // total_conv}× plus de paramètres !")
+print(f"   grâce au partage de poids (weight sharing) des convolutions.")`,
+        solution: `import torch
+import torch.nn as nn
+
+conv1 = nn.Conv2d(3, 16, 3, padding=1)
+conv2 = nn.Conv2d(16, 32, 3, padding=1)
+conv3 = nn.Conv2d(32, 64, 3, padding=1)
+
+fc1 = nn.Linear(3 * 32 * 32, 16 * 32 * 32)
+
+print("═══ CNN vs FC — Nombre de paramètres ═══")
+print(f"Conv1 (3→16, 3×3):  {sum(p.numel() for p in conv1.parameters()):>10,}")
+print(f"Conv2 (16→32, 3×3): {sum(p.numel() for p in conv2.parameters()):>10,}")
+print(f"Conv3 (32→64, 3×3): {sum(p.numel() for p in conv3.parameters()):>10,}")
+total_conv = sum(sum(p.numel() for p in m.parameters()) for m in [conv1, conv2, conv3])
+print(f"Total CNN:           {total_conv:>10,}")
+print(f"\\nFC1 (3*32*32 → 16*32*32): {sum(p.numel() for p in fc1.parameters()):>10,}")
+print(f"\\n→ Le FC a {sum(p.numel() for p in fc1.parameters()) // total_conv}× plus de paramètres !")
+print(f"   grâce au partage de poids (weight sharing) des convolutions.")`,
+        hints: [
+          'Conv2d params = Cout × (Cin × K × K + 1_bias)',
+          'Le weight sharing réduit drastiquement les paramètres',
+        ],
+        completed: false,
+      },
     ],
     codeTemplate: `import torch
 import torch.nn as nn
 
-# ══ Réseaux Convolutifs (CNN) ══
+# ══════════════════════════════════════════════════════════════
+# Réseaux Convolutifs — Ch. 10 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
-# ── 1. Convolution 2D simple ──
+# ── 1. Convolution 2D ──
 conv = nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3, padding=1)
-x = torch.randn(1, 1, 28, 28)  # batch=1, channels=1, H=28, W=28
+x = torch.randn(1, 1, 28, 28)
 out = conv(x)
 print(f"Conv2d: {x.shape} → {out.shape}")
-print(f"Paramètres conv: {conv.weight.shape} = {conv.weight.numel()} poids + {conv.bias.numel()} biais")
+print(f"Kernel: {conv.weight.shape} = {conv.weight.numel()} poids + {conv.bias.numel()} biais")
 
 # ── 2. CNN complet ──
 class MNISTNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(1, 16, 3, padding=1),   # 28×28 → 28×28
-            nn.ReLU(),
-            nn.MaxPool2d(2),                    # → 14×14
-            nn.Conv2d(16, 32, 3, padding=1),   # → 14×14
-            nn.ReLU(),
-            nn.MaxPool2d(2),                    # → 7×7
+            nn.Conv2d(1, 16, 3, padding=1), nn.BatchNorm2d(16), nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(16, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(),
+            nn.MaxPool2d(2),
         )
         self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(32 * 7 * 7, 128),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(128, 10)
+            nn.Flatten(), nn.Linear(32*7*7, 128), nn.ReLU(),
+            nn.Dropout(0.3), nn.Linear(128, 10)
         )
     
     def forward(self, x):
@@ -2369,17 +3723,24 @@ model = MNISTNet()
 out = model(torch.randn(4, 1, 28, 28))
 print(f"\\nMNISTNet: batch=4 → {out.shape}")
 print(f"Paramètres: {sum(p.numel() for p in model.parameters()):,}")
+
+# ── 3. Feature maps ──
+print("\\n═══ Feature maps par couche ═══")
+x = torch.randn(1, 1, 28, 28)
+for name, layer in model.features.named_children():
+    x = layer(x)
+    print(f"  Layer {name}: {x.shape}")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 10 — RESIDUAL NETWORKS
+  // MODULE 10 — RESIDUAL NETWORKS (Ch. 11)
   // ═══════════════════════════════════════
   {
     id: 'resnet',
     title: 'Réseaux Résiduels (ResNet)',
     shortTitle: 'ResNet',
-    description: 'Connexions résiduelles, skip connections et Batch Normalization.',
+    description: 'Skip connections, blocs résiduels, BatchNorm, entraîner des réseaux de 100+ couches (Ch. 11 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['cnn'],
@@ -2387,31 +3748,67 @@ print(f"Paramètres: {sum(p.numel() for p in model.parameters()):,}")
     theory: [
       {
         type: 'text',
-        content: `Les réseaux très profonds (>20 couches) souffrent du problème des **gradients évanescents** : le gradient devient exponentiellement petit en traversant chaque couche. Les **connexions résiduelles** (skip connections) résolvent ce problème en ajoutant l'entrée directement à la sortie de chaque bloc.`,
-      },
-      {
-        type: 'equation',
-        content: '\\mathbf{h}_{k+1} = \\mathbf{h}_k + f_k(\\mathbf{h}_k)',
-        label: 'Connexion résiduelle',
-        highlightVar: 'hidden',
+        content: `## 11.1 — Le problème de la profondeur\n\nLes réseaux très profonds (>20 couches) souffrent du **degradation problem** : la performance se dégrade avec la profondeur, même sur le jeu d'entraînement ! Ce n'est pas de l'overfitting — c'est un problème d'**optimisation** dû aux gradients évanescents.`,
       },
       {
         type: 'text',
-        content: `Au lieu d'apprendre la transformation complète h → h', le réseau apprend le **résidu** f(h) = h' - h. Si le résidu est proche de zéro, le gradient passe directement via le skip connection.\n\nUn **bloc résiduel** typique contient :\n- BatchNorm → ReLU → Conv → BatchNorm → ReLU → Conv → + input`,
+        content: `## 11.2 — Connexion résiduelle\n\nL'idée géniale de He et al. (2015) : au lieu d'apprendre la transformation complète h → h', le réseau apprend le **résidu** f(h) = h' − h. La sortie est simplement h + f(h). Si le résidu est proche de zéro, le gradient circule librement via le "highway" de la skip connection :`,
+      },
+      {
+        type: 'equation',
+        content: '\\mathbf{h}_{k+1} = \\mathbf{h}_k + f_k(\\mathbf{h}_k) \\qquad \\text{(résiduel)}',
+        label: 'Éq. 11.1 — Skip connection',
+        highlightVar: 'hidden',
+      },
+      {
+        type: 'diagram',
+        content: `  ┌──────────────────────────────────────┐
+  │         Skip Connection              │
+  │              ╭───────────────╮       │
+  │    x  ──────▶│               │──▶ +  │──▶ output
+  │    │         │  Conv-BN-ReLU │       ▲
+  │    │         │  Conv-BN      │       │
+  │    │         ╰───────────────╯       │
+  │    ╰─────────────────────────────────╯
+  │         x directement additionné !
+  └──────────────────────────────────────┘
+  
+  Si f(x) → 0, alors output ≈ x (identité)
+  → Le réseau peut toujours "copier" l'entrée`,
+        label: 'Fig. 11.1 — Bloc résiduel avec skip connection',
+      },
+      {
+        type: 'text',
+        content: `## 11.3 — Bloc résiduel pré-activation\n\nDeux variantes :\n- **Post-activation** (ResNet v1) : Conv → BN → ReLU → Conv → BN → + → ReLU\n- **Pré-activation** (ResNet v2, meilleur) : BN → ReLU → Conv → BN → ReLU → Conv → +\n\nLa version pré-activation garde le chemin résiduel **propre** (pas de non-linéarité sur le shortcut).`,
+      },
+      {
+        type: 'text',
+        content: `## 11.4 — Changement de dimensions\n\nQuand les dimensions changent (doubler les channels, réduire la résolution), la skip connection utilise une **convolution 1×1** avec stride 2 pour adapter les dimensions. Cela garde l'addition h + f(h) valide.`,
+      },
+      {
+        type: 'equation',
+        content: '\\frac{\\partial \\ell}{\\partial \\mathbf{h}_k} = \\frac{\\partial \\ell}{\\partial \\mathbf{h}_{k+1}} \\cdot \\left( \\mathbf{I} + \\frac{\\partial f_k}{\\partial \\mathbf{h}_k} \\right)',
+        label: 'Gradient : le terme I empêche le vanishing !',
+        highlightVar: 'grad',
       },
       {
         type: 'callout',
-        content: '🧠 ResNet a permis d\'entraîner des réseaux de 152+ couches. Sans skip connections, même des réseaux de 30 couches étaient difficiles à entraîner. L\'idée clé : le réseau peut toujours "copier" l\'entrée si les couches ne sont pas utiles.',
+        content: '🧠 **Pourquoi ça marche ?** Le gradient de la skip connection contient un terme **identité I**. Même si ∂f/∂h est petit, le gradient circule via I. Cela crée un "highway" pour le gradient, permettant d\'entraîner des réseaux de **152, 1000+** couches !',
+      },
+      {
+        type: 'text',
+        content: `## 11.5 — Architectures ResNet\n\n- **ResNet-18/34** : blocs basiques (2 convolutions 3×3)\n- **ResNet-50/101/152** : blocs bottleneck (1×1 → 3×3 → 1×1, réduit les calculs)\n- **WideResNet** : plus large au lieu de plus profond\n- **ResNeXt** : blocs parallèles avec cardinality\n- **DenseNet** : chaque couche connectée à TOUTES les précédentes`,
       },
     ],
-    exercises: [],
-    codeTemplate: `import torch
+    exercises: [
+      {
+        id: 'resnet-ex1',
+        title: '💻 Pratique — Bloc résiduel',
+        instructions: 'Implémentez un bloc résiduel (Residual Block) et un SimpleResNet avec 3 blocs. Vérifiez que les gradients circulent bien.',
+        starterCode: `import torch
 import torch.nn as nn
 
-# ══ Réseaux Résiduels ══
-
 class ResidualBlock(nn.Module):
-    """Bloc résiduel : sortie = entrée + f(entrée)"""
     def __init__(self, channels):
         super().__init__()
         self.block = nn.Sequential(
@@ -2424,7 +3821,186 @@ class ResidualBlock(nn.Module):
         )
     
     def forward(self, x):
-        return x + self.block(x)  # Skip connection !
+        return ___  # skip connection !
+
+class SimpleResNet(nn.Module):
+    def __init__(self, num_blocks=3):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 32, 3, padding=1)
+        self.blocks = nn.Sequential(*[ResidualBlock(32) for _ in range(num_blocks)])
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(32, 10)
+    
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.blocks(x)
+        x = self.pool(x).flatten(1)
+        return self.fc(x)
+
+model = SimpleResNet(num_blocks=5)
+x = torch.randn(2, 1, 28, 28)
+out = model(x)
+loss = out.sum()
+loss.backward()
+
+print(f"Output: {out.shape}")
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")
+print(f"Conv1 grad norm: {model.conv1.weight.grad.norm().item():.6f}")
+print(f"→ Le gradient circule bien malgré 11 couches conv !")`,
+        solution: `import torch
+import torch.nn as nn
+
+class ResidualBlock(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 3, padding=1),
+            nn.BatchNorm2d(channels),
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 3, padding=1),
+        )
+    
+    def forward(self, x):
+        return x + self.block(x)
+
+class SimpleResNet(nn.Module):
+    def __init__(self, num_blocks=3):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 32, 3, padding=1)
+        self.blocks = nn.Sequential(*[ResidualBlock(32) for _ in range(num_blocks)])
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(32, 10)
+    
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.blocks(x)
+        x = self.pool(x).flatten(1)
+        return self.fc(x)
+
+model = SimpleResNet(num_blocks=5)
+x = torch.randn(2, 1, 28, 28)
+out = model(x)
+loss = out.sum()
+loss.backward()
+
+print(f"Output: {out.shape}")
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")
+print(f"Conv1 grad norm: {model.conv1.weight.grad.norm().item():.6f}")
+print(f"→ Le gradient circule bien malgré 11 couches conv !")`,
+        hints: [
+          'return x + self.block(x)  — c\'est la skip connection',
+          'Le + additionne l\'entrée et la sortie du bloc',
+        ],
+        completed: false,
+      },
+      {
+        id: 'resnet-th1',
+        title: '🧠 Théorie — ResNet vs PlainNet (gradient flow)',
+        instructions: 'Comparez le flux de gradient dans un réseau "plain" (sans skip) vs ResNet de même profondeur. Montrez que ResNet préserve les gradients.',
+        starterCode: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+def make_plain_net(depth=20, ch=32):
+    layers = [nn.Conv2d(1, ch, 3, padding=1)]
+    for _ in range(depth):
+        layers.extend([nn.Conv2d(ch, ch, 3, padding=1), nn.ReLU()])
+    layers.append(nn.AdaptiveAvgPool2d(1))
+    return nn.Sequential(*layers)
+
+class ResBlock(nn.Module):
+    def __init__(self, ch):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(ch, ch, 3, padding=1), nn.ReLU(),
+        )
+    def forward(self, x):
+        return x + self.net(x)
+
+def make_resnet(depth=20, ch=32):
+    layers = [nn.Conv2d(1, ch, 3, padding=1)]
+    for _ in range(depth):
+        layers.append(ResBlock(ch))
+    layers.append(nn.AdaptiveAvgPool2d(1))
+    return nn.Sequential(*layers)
+
+x = torch.randn(1, 1, 28, 28)
+
+for name, model_fn in [('Plain', make_plain_net), ('ResNet', make_resnet)]:
+    model = model_fn(depth=20)
+    out = model(x)
+    out.sum().backward()
+    grad = model[0].weight.grad.norm().item()
+    print(f"{name:>6}: grad_norm_layer0 = {grad:.8f}")
+
+print(f"\\n→ Le gradient du PlainNet est beaucoup plus petit (vanishing) !")`,
+        solution: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+def make_plain_net(depth=20, ch=32):
+    layers = [nn.Conv2d(1, ch, 3, padding=1)]
+    for _ in range(depth):
+        layers.extend([nn.Conv2d(ch, ch, 3, padding=1), nn.ReLU()])
+    layers.append(nn.AdaptiveAvgPool2d(1))
+    return nn.Sequential(*layers)
+
+class ResBlock(nn.Module):
+    def __init__(self, ch):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(ch, ch, 3, padding=1), nn.ReLU(),
+        )
+    def forward(self, x):
+        return x + self.net(x)
+
+def make_resnet(depth=20, ch=32):
+    layers = [nn.Conv2d(1, ch, 3, padding=1)]
+    for _ in range(depth):
+        layers.append(ResBlock(ch))
+    layers.append(nn.AdaptiveAvgPool2d(1))
+    return nn.Sequential(*layers)
+
+x = torch.randn(1, 1, 28, 28)
+
+for name, model_fn in [('Plain', make_plain_net), ('ResNet', make_resnet)]:
+    model = model_fn(depth=20)
+    out = model(x)
+    out.sum().backward()
+    grad = model[0].weight.grad.norm().item()
+    print(f"{name:>6}: grad_norm_layer0 = {grad:.8f}")
+
+print(f"\\n→ Le gradient du PlainNet est beaucoup plus petit (vanishing) !")`,
+        hints: [
+          'Le PlainNet perd le gradient car chaque couche le multiplie par < 1',
+          'Le ResNet préserve le gradient grâce au terme identité I',
+        ],
+        completed: false,
+      },
+    ],
+    codeTemplate: `import torch
+import torch.nn as nn
+
+# ══════════════════════════════════════════════════════════════
+# Réseaux Résiduels — Ch. 11 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
+
+class ResidualBlock(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.BatchNorm2d(channels), nn.ReLU(),
+            nn.Conv2d(channels, channels, 3, padding=1),
+            nn.BatchNorm2d(channels), nn.ReLU(),
+            nn.Conv2d(channels, channels, 3, padding=1),
+        )
+    
+    def forward(self, x):
+        return x + self.block(x)
 
 class SimpleResNet(nn.Module):
     def __init__(self):
@@ -2449,18 +4025,18 @@ x = torch.randn(2, 1, 28, 28)
 out = model(x)
 print(f"SimpleResNet: {x.shape} → {out.shape}")
 print(f"Paramètres: {sum(p.numel() for p in model.parameters()):,}")
-print(f"Profondeur: 1 conv + 6 conv (3 blocs × 2) = 7 couches conv")
+print(f"Profondeur: 1 + 6 = 7 couches conv (3 blocs × 2)")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 11 — RNN/LSTM
+  // MODULE 11 — RNN/LSTM (Ch. 12)
   // ═══════════════════════════════════════
   {
     id: 'rnn',
     title: 'Réseaux Récurrents (RNN/LSTM)',
     shortTitle: 'RNN',
-    description: 'Traitement des séquences avec mémoire temporelle et portes.',
+    description: 'Traitement séquentiel, état caché, vanishing gradient temporel, portes LSTM/GRU (Ch. 12 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['regularization'],
@@ -2468,74 +4044,248 @@ print(f"Profondeur: 1 conv + 6 conv (3 blocs × 2) = 7 couches conv")
     theory: [
       {
         type: 'text',
-        content: `Les **RNN** traitent des séquences en maintenant un **état caché** (hidden state) qui encode l'historique. À chaque pas de temps t, le RNN reçoit l'entrée xₜ et l'état précédent hₜ₋₁, et produit un nouvel état hₜ.\n\nLe problème : les gradients s'évanouissent sur les longues séquences (long-range dependencies).`,
-      },
-      {
-        type: 'equation',
-        content: '\\mathbf{h}_t = \\tanh(\\mathbf{W}_{hh} \\mathbf{h}_{t-1} + \\mathbf{W}_{xh} \\mathbf{x}_t + \\mathbf{b}_h)',
-        label: 'RNN — État caché',
+        content: `## 12.1 — Pourquoi les séquences sont spéciales\n\nLes données séquentielles (texte, audio, séries temporelles) ont des **dépendances temporelles** : chaque élément dépend des précédents. Un réseau feedforward traite chaque entrée indépendamment — il ignore l'ordre. Le **RNN** résout cela avec un **état caché** qui accumule l'information au fil du temps.`,
       },
       {
         type: 'text',
-        content: `Le **LSTM** (Long Short-Term Memory) résout le vanishing gradient avec des **portes** (gates) qui contrôlent le flux d'information :\n\n- **Porte d'oubli** (forget gate) : quelle info effacer de la mémoire\n- **Porte d'entrée** (input gate) : quelle nouvelle info stocker\n- **Porte de sortie** (output gate) : quelle info envoyer en sortie`,
+        content: `## 12.2 — RNN (Recurrent Neural Network)\n\nÀ chaque pas de temps t, le RNN reçoit l'entrée xₜ et l'état précédent hₜ₋₁, et produit un nouvel état hₜ. Les mêmes poids W sont **partagés** à chaque pas de temps :`,
       },
       {
         type: 'equation',
-        content: '\\begin{aligned} \\mathbf{f}_t &= \\sigma(\\mathbf{W}_f [\\mathbf{h}_{t-1}, \\mathbf{x}_t] + \\mathbf{b}_f) \\\\ \\mathbf{i}_t &= \\sigma(\\mathbf{W}_i [\\mathbf{h}_{t-1}, \\mathbf{x}_t] + \\mathbf{b}_i) \\\\ \\mathbf{c}_t &= \\mathbf{f}_t \\odot \\mathbf{c}_{t-1} + \\mathbf{i}_t \\odot \\tanh(\\mathbf{W}_c [\\mathbf{h}_{t-1}, \\mathbf{x}_t] + \\mathbf{b}_c) \\end{aligned}',
-        label: 'LSTM — Portes et cellule mémoire',
+        content: '\\mathbf{h}_t = \\tanh\\!\\left(\\mathbf{W}_{hh} \\mathbf{h}_{t-1} + \\mathbf{W}_{xh} \\mathbf{x}_t + \\mathbf{b}_h\\right)',
+        label: 'Éq. 12.1 — RNN : État caché',
+      },
+      {
+        type: 'diagram',
+        content: `  Unfolded RNN (3 pas de temps)
+  ─────────────────────────────────────────────
+      x₁         x₂         x₃
+      │          │          │
+      ▼          ▼          ▼
+  ┌───────┐ ┌───────┐ ┌───────┐
+  │ RNN   │→│ RNN   │→│ RNN   │→ hₜ
+  │ cell  │ │ cell  │ │ cell  │
+  └───────┘ └───────┘ └───────┘
+  h₀    h₁       h₂       h₃
+  
+  MÊMES POIDS (Whh, Wxh, bh) partagés à chaque t
+  → "Dérouler" le RNN = réseau profond de T couches`,
+        label: 'Fig. 12.2 — RNN déroulé dans le temps',
+      },
+      {
+        type: 'text',
+        content: `## 12.3 — Vanishing gradient temporel\n\nQuand on déroule le RNN sur T pas de temps, le backprop traverse T copies de W. Si les valeurs propres de W < 1, le gradient **s'évanouit** exponentiellement. Si > 1, il **explose**. C'est le problème des **long-range dependencies**.`,
+      },
+      {
+        type: 'text',
+        content: `## 12.4 — LSTM (Long Short-Term Memory)\n\nLe LSTM résout le vanishing gradient avec une **mémoire à long terme** (cell state cₜ) protégée par 3 **portes** (gates) apprenables :`,
+      },
+      {
+        type: 'equation',
+        content: '\\begin{aligned} \\mathbf{f}_t &= \\sigma(\\mathbf{W}_f [\\mathbf{h}_{t-1}, \\mathbf{x}_t] + \\mathbf{b}_f) & \\text{(forget gate)} \\\\ \\mathbf{i}_t &= \\sigma(\\mathbf{W}_i [\\mathbf{h}_{t-1}, \\mathbf{x}_t] + \\mathbf{b}_i) & \\text{(input gate)} \\\\ \\tilde{\\mathbf{c}}_t &= \\tanh(\\mathbf{W}_c [\\mathbf{h}_{t-1}, \\mathbf{x}_t] + \\mathbf{b}_c) & \\text{(candidate)} \\\\ \\mathbf{c}_t &= \\mathbf{f}_t \\odot \\mathbf{c}_{t-1} + \\mathbf{i}_t \\odot \\tilde{\\mathbf{c}}_t & \\text{(cell update)} \\\\ \\mathbf{o}_t &= \\sigma(\\mathbf{W}_o [\\mathbf{h}_{t-1}, \\mathbf{x}_t] + \\mathbf{b}_o) & \\text{(output gate)} \\\\ \\mathbf{h}_t &= \\mathbf{o}_t \\odot \\tanh(\\mathbf{c}_t) & \\text{(hidden state)} \\end{aligned}',
+        label: 'Éq. 12.8–12.13 — LSTM complet',
+      },
+      {
+        type: 'diagram',
+        content: `  LSTM Cell
+  ╔═══════════════════════════════════════╗
+  ║  cₜ₋₁ ──▶ ×(fₜ) ──▶ + ──▶ cₜ        ║
+  ║                     ▲                ║
+  ║                 ×(iₜ)                ║
+  ║                     ▲                ║
+  ║                 tanh(c̃ₜ)             ║
+  ║                                      ║
+  ║  hₜ₋₁ ─┬──▶ [fₜ, iₜ, c̃ₜ, oₜ]       ║
+  ║  xₜ   ─┘                            ║
+  ║                                      ║
+  ║  hₜ = oₜ × tanh(cₜ)                  ║
+  ╚═══════════════════════════════════════╝
+  
+  fₜ : forget gate  → quoi effacer de cₜ₋₁
+  iₜ : input gate   → quoi ajouter
+  oₜ : output gate  → quoi exposer`,
+        label: 'Fig. 12.6 — Architecture LSTM',
+      },
+      {
+        type: 'text',
+        content: `## 12.5 — GRU (Gated Recurrent Unit)\n\nVersion simplifiée du LSTM avec seulement **2 portes** (reset r et update z). Moins de paramètres, performances souvent comparables. Pas de cell state séparé.`,
       },
       {
         type: 'callout',
-        content: '💡 Les Transformers ont largement remplacé les RNN/LSTM pour la plupart des tâches séquentielles (NLP, audio). Cependant, les RNN restent utiles pour les séquences très longues et le traitement en temps réel.',
+        content: '💡 **En pratique** :\n• \\`nn.RNN\\` : simple mais vanishing gradient → rarement utilisé\n• \\`nn.LSTM\\` : robuste, gère les longues séquences\n• \\`nn.GRU\\` : léger, bon pour les petits datasets\n• Les **Transformers** ont largement remplacé les RNN pour le NLP, mais les RNN restent utiles pour le streaming et les séquences très longues.',
       },
     ],
-    exercises: [],
-    codeTemplate: `import torch
+    exercises: [
+      {
+        id: 'rnn-ex1',
+        title: '💻 Pratique — LSTM pour séquences',
+        instructions: 'Construisez un classifieur de séquences avec LSTM. Utilisez le dernier état caché pour la classification.',
+        starterCode: `import torch
 import torch.nn as nn
 
-# ══ Réseaux Récurrents ══
-
-# ── 1. RNN simple ──
-rnn = nn.RNN(input_size=10, hidden_size=20, num_layers=2, batch_first=True)
-x = torch.randn(1, 5, 10)  # batch=1, seq_len=5, features=10
-output, h_n = rnn(x)
-print(f"RNN Output: {output.shape}")    # (1, 5, 20)
-print(f"RNN Hidden: {h_n.shape}")       # (2, 1, 20)
-
-# ── 2. LSTM ──
-lstm = nn.LSTM(input_size=10, hidden_size=20, num_layers=2, batch_first=True)
-output, (h_n, c_n) = lstm(x)
-print(f"\\nLSTM Output: {output.shape}")
-print(f"LSTM Hidden: {h_n.shape}")
-print(f"LSTM Cell:   {c_n.shape}")
-
-# ── 3. LSTM pour classification de séquences ──
-class SeqClassifier(nn.Module):
-    def __init__(self, input_dim, hidden_dim, num_classes):
+class LSTMClassifier(nn.Module):
+    def __init__(self, input_dim, hidden_dim, num_classes, num_layers=2):
         super().__init__()
-        self.lstm = nn.LSTM(input_dim, hidden_dim, batch_first=True)
+        self.lstm = nn.LSTM(input_dim, hidden_dim,
+                            num_layers=num_layers,
+                            batch_first=True,
+                            dropout=0.2)
         self.fc = nn.Linear(hidden_dim, num_classes)
     
     def forward(self, x):
-        output, (h_n, _) = self.lstm(x)
-        # Utiliser le dernier état caché
-        return self.fc(h_n.squeeze(0))
+        # x: (batch, seq_len, input_dim)
+        output, (h_n, c_n) = self.lstm(x)
+        # h_n: (num_layers, batch, hidden_dim)
+        last_hidden = ___  # dernier layer, dernier état
+        return self.fc(last_hidden)
 
-clf = SeqClassifier(10, 32, 5)
-x = torch.randn(4, 20, 10)  # batch=4, seq_len=20, features=10
-out = clf(x)
-print(f"\\nClassification: {x.shape} → {out.shape}")
+model = LSTMClassifier(input_dim=10, hidden_dim=64, num_classes=5)
+x = torch.randn(8, 20, 10)  # batch=8, seq_len=20, features=10
+out = model(x)
+print(f"Input:  {x.shape}")
+print(f"Output: {out.shape}")
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")`,
+        solution: `import torch
+import torch.nn as nn
+
+class LSTMClassifier(nn.Module):
+    def __init__(self, input_dim, hidden_dim, num_classes, num_layers=2):
+        super().__init__()
+        self.lstm = nn.LSTM(input_dim, hidden_dim,
+                            num_layers=num_layers,
+                            batch_first=True,
+                            dropout=0.2)
+        self.fc = nn.Linear(hidden_dim, num_classes)
+    
+    def forward(self, x):
+        output, (h_n, c_n) = self.lstm(x)
+        last_hidden = h_n[-1]
+        return self.fc(last_hidden)
+
+model = LSTMClassifier(input_dim=10, hidden_dim=64, num_classes=5)
+x = torch.randn(8, 20, 10)
+out = model(x)
+print(f"Input:  {x.shape}")
+print(f"Output: {out.shape}")
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")`,
+        hints: [
+          'h_n[-1] donne le dernier layer du dernier timestep',
+          'h_n shape = (num_layers, batch, hidden_dim)',
+        ],
+        completed: false,
+      },
+      {
+        id: 'rnn-th1',
+        title: '🧠 Théorie — RNN vs LSTM gradient flow',
+        instructions: 'Comparez la norme des gradients sur des séquences de longueur croissante pour un RNN simple vs LSTM.',
+        starterCode: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+def test_gradient_flow(model_class, seq_lengths, input_dim=5, hidden_dim=32):
+    results = []
+    for T in seq_lengths:
+        model = model_class(input_dim, hidden_dim, batch_first=True)
+        x = torch.randn(1, T, input_dim, requires_grad=True)
+        
+        output, _ = model(x)
+        loss = output[:, -1, :].sum()  # utiliser le dernier output
+        loss.backward()
+        
+        grad_norm = x.grad[:, 0, :].norm().item()  # gradient au PREMIER timestep
+        results.append(grad_norm)
+    return results
+
+seq_lengths = [5, 10, 20, 50, 100]
+rnn_grads = test_gradient_flow(nn.RNN, seq_lengths)
+lstm_grads = test_gradient_flow(nn.LSTM, seq_lengths)
+
+print(f"{'T':>5} │ {'RNN grad':>12} │ {'LSTM grad':>12}")
+print(f"{'─'*5}─┼─{'─'*12}─┼─{'─'*12}")
+for T, rg, lg in zip(seq_lengths, rnn_grads, lstm_grads):
+    print(f"{T:5d} │ {rg:12.6f} │ {lg:12.6f}")
+print(f"\\n→ Le gradient RNN s'évanouit, le LSTM le préserve !")`,
+        solution: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+def test_gradient_flow(model_class, seq_lengths, input_dim=5, hidden_dim=32):
+    results = []
+    for T in seq_lengths:
+        model = model_class(input_dim, hidden_dim, batch_first=True)
+        x = torch.randn(1, T, input_dim, requires_grad=True)
+        
+        output, _ = model(x)
+        loss = output[:, -1, :].sum()
+        loss.backward()
+        
+        grad_norm = x.grad[:, 0, :].norm().item()
+        results.append(grad_norm)
+    return results
+
+seq_lengths = [5, 10, 20, 50, 100]
+rnn_grads = test_gradient_flow(nn.RNN, seq_lengths)
+lstm_grads = test_gradient_flow(nn.LSTM, seq_lengths)
+
+print(f"{'T':>5} │ {'RNN grad':>12} │ {'LSTM grad':>12}")
+print(f"{'─'*5}─┼─{'─'*12}─┼─{'─'*12}")
+for T, rg, lg in zip(seq_lengths, rnn_grads, lstm_grads):
+    print(f"{T:5d} │ {rg:12.6f} │ {lg:12.6f}")
+print(f"\\n→ Le gradient RNN s'évanouit, le LSTM le préserve !")`,
+        hints: [
+          'Le gradient au premier timestep mesure les long-range dependencies',
+          'Le cell state du LSTM crée un "highway" pour le gradient',
+        ],
+        completed: false,
+      },
+    ],
+    codeTemplate: `import torch
+import torch.nn as nn
+
+# ══════════════════════════════════════════════════════════════
+# Réseaux Récurrents — Ch. 12 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
+
+# ── 1. RNN simple ──
+print("═══ RNN ═══")
+rnn = nn.RNN(input_size=10, hidden_size=20, num_layers=2, batch_first=True)
+x = torch.randn(1, 5, 10)
+output, h_n = rnn(x)
+print(f"Output: {output.shape}  (batch, seq_len, hidden)")
+print(f"Hidden: {h_n.shape}    (layers, batch, hidden)")
+
+# ── 2. LSTM ──
+print("\\n═══ LSTM ═══")
+lstm = nn.LSTM(input_size=10, hidden_size=20, num_layers=2, batch_first=True)
+output, (h_n, c_n) = lstm(x)
+print(f"Output: {output.shape}")
+print(f"Hidden: {h_n.shape}, Cell: {c_n.shape}")
+
+# ── 3. GRU ──
+print("\\n═══ GRU ═══")
+gru = nn.GRU(input_size=10, hidden_size=20, num_layers=2, batch_first=True)
+output, h_n = gru(x)
+print(f"Output: {output.shape}")
+
+# ── 4. Comparaison paramètres ──
+print("\\n═══ Paramètres ═══")
+for name, m in [('RNN', rnn), ('LSTM', lstm), ('GRU', gru)]:
+    p = sum(p.numel() for p in m.parameters())
+    print(f"  {name:>4s}: {p:,} params")
+print("  LSTM ≈ 4× RNN (4 portes), GRU ≈ 3× RNN (3 gates)")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 12 — TRANSFORMERS
+  // MODULE 12 — TRANSFORMERS (Ch. 12-13)
   // ═══════════════════════════════════════
   {
     id: 'attention',
     title: 'Attention & Transformers',
     shortTitle: 'Transformer',
-    description: 'Self-Attention, Multi-Head Attention et l\'architecture qui a révolutionné le NLP.',
+    description: 'Self-Attention, Multi-Head Attention, Positional Encoding, blocs Transformer encoder/decoder (Ch. 12-13 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['rnn'],
@@ -2543,46 +4293,108 @@ print(f"\\nClassification: {x.shape} → {out.shape}")
     theory: [
       {
         type: 'text',
-        content: `Le **Transformer** est l'architecture dominante en Deep Learning moderne. Son mécanisme clé est le **dot-product self-attention** qui permet à chaque élément d'une séquence de "consulter" tous les autres.\n\nPour chaque entrée xₘ, on calcule trois vecteurs :\n- **Value** vₘ : le contenu à transmettre\n- **Query** qₙ : "quelle information cherche la position n ?"\n- **Key** kₘ : "quelle information offre la position m ?"`,
-      },
-      {
-        type: 'equation',
-        content: '\\text{sa}_n[\\mathbf{x}_\\bullet] = \\sum_{m=1}^{N} a[\\mathbf{x}_m, \\mathbf{x}_n] \\cdot \\mathbf{v}_m',
-        label: 'Self-Attention Output',
+        content: `## 12.1 — Du RNN au Transformer\n\nLes RNN traitent les tokens **séquentiellement** — impossible de paralléliser, et l'information se dégrade sur les longues séquences. Le **Transformer** (Vaswani et al., 2017) remplace la récurrence par le **self-attention** : chaque token consulte directement tous les autres en parallèle.\n\nRésultat : parallélisme massif + pas de vanishing gradient temporel.`,
       },
       {
         type: 'text',
-        content: `Les poids d'attention sont calculés par produit scalaire queries × keys, divisé par √dₖ pour la stabilité numérique, puis passés par softmax. Le nombre de poids d'attention croît quadratiquement avec la longueur de séquence N.`,
+        content: `## 12.2 — Dot-Product Self-Attention\n\nPour chaque entrée xₘ, on projette vers 3 vecteurs :\n- **Query** q = Wq·x : "quelle information je cherche"\n- **Key** k = Wk·x : "quelle information j'offre"\n- **Value** v = Wv·x : "le contenu à transmettre"\n\nLa sortie de l'attention est une somme pondérée des values, avec des poids calculés par compatibilité query-key :`,
       },
       {
         type: 'equation',
-        content: '\\text{Attention}(\\mathbf{Q}, \\mathbf{K}, \\mathbf{V}) = \\text{softmax}\\!\\left(\\frac{\\mathbf{Q}\\mathbf{K}^T}{\\sqrt{d_k}}\\right) \\mathbf{V}',
-        label: 'Scaled Dot-Product Attention',
+        content: '\\text{Attention}(\\mathbf{Q}, \\mathbf{K}, \\mathbf{V}) = \\text{softmax}\\!\\left(\\frac{\\mathbf{Q}\\mathbf{K}^\\top}{\\sqrt{d_k}}\\right) \\mathbf{V}',
+        label: 'Éq. 12.14 — Scaled Dot-Product Attention',
+        highlightVar: 'attention',
+      },
+      {
+        type: 'diagram',
+        content: `  Scaled Dot-Product Attention
+  ─────────────────────────────
+      Q    K    V
+      │    │    │
+      └──┬─┘    │
+         │      │
+     Q·K^T/√dk  │
+         │      │
+      softmax   │
+         │      │
+         └──┬───┘
+            │
+        Attn @ V
+            │
+         Output
+  
+  Complexité : O(N² · d)  — quadratique en longueur de séquence`,
+        label: 'Fig. 12.3 — Attention Pipeline',
       },
       {
         type: 'text',
-        content: `Le **Multi-Head Attention** exécute H mécanismes d'attention en parallèle, chacun apprenant des types de relations différents. BERT utilise H=12 têtes, GPT-3 utilise H=96 têtes.\n\nUne couche Transformer complète = Multi-Head Attention + Add&Norm + FFN + Add&Norm.`,
+        content: `## 12.3 — Multi-Head Attention\n\nAu lieu d'un seul mécanisme d'attention, on exécute **H têtes** en parallèle. Chaque tête utilise des projections différentes (Wq_h, Wk_h, Wv_h) et apprend des types de relations distincts : syntaxe, coréférence, sémantique, etc.\n\nLes sorties des H têtes sont concaténées puis projetées par Wo :`,
+      },
+      {
+        type: 'equation',
+        content: '\\text{MultiHead}(\\mathbf{X}) = \\text{Concat}(\\text{head}_1, \\ldots, \\text{head}_H) \\, \\mathbf{W}_O \\quad \\text{où}\\; \\text{head}_h = \\text{Attn}(\\mathbf{X}\\mathbf{W}_h^Q, \\mathbf{X}\\mathbf{W}_h^K, \\mathbf{X}\\mathbf{W}_h^V)',
+        label: 'Éq. 12.18 — Multi-Head Attention',
+      },
+      {
+        type: 'text',
+        content: `## 12.4 — Positional Encoding\n\nLe self-attention est **permutation-invariant** — il ne connaît pas l'ordre des tokens ! On ajoute un **positional encoding** pour injecter la notion de position :\n\n**Sinusoidal** (Vaswani) : PE(pos, 2i) = sin(pos / 10000^(2i/d)), PE(pos, 2i+1) = cos(pos / 10000^(2i/d))\n\n**Appris** (BERT, GPT) : une matrice (max_len × d_model) entraînable.`,
+      },
+      {
+        type: 'text',
+        content: `## 12.5 — Bloc Transformer\n\nUn bloc Transformer empile :\n1. **Multi-Head Self-Attention** + résiduel + LayerNorm\n2. **Feed-Forward Network** (2 couches, ReLU/GELU) + résiduel + LayerNorm\n\nOn empile L blocs identiques. BERT-base : L=12, d=768, H=12. GPT-3 : L=96, d=12288, H=96.`,
+      },
+      {
+        type: 'diagram',
+        content: `  Transformer Block (Pre-Norm variant)
+  ╔═══════════════════════════════════╗
+  ║  Input x                         ║
+  ║    │                              ║
+  ║    ├───────────────────┐          ║
+  ║    ▼                   │          ║
+  ║  LayerNorm             │          ║
+  ║    ▼                   │          ║
+  ║  Multi-Head Attention  │          ║
+  ║    ▼                   │          ║
+  ║    + ◄─────────────────┘ (résiduel)║
+  ║    │                              ║
+  ║    ├───────────────────┐          ║
+  ║    ▼                   │          ║
+  ║  LayerNorm             │          ║
+  ║    ▼                   │          ║
+  ║  FFN (Linear→GELU→Linear)        ║
+  ║    ▼                   │          ║
+  ║    + ◄─────────────────┘ (résiduel)║
+  ║    │                              ║
+  ║  Output                          ║
+  ╚═══════════════════════════════════╝`,
+        label: 'Fig. 12.7 — Bloc Transformer',
+      },
+      {
+        type: 'text',
+        content: `## 12.6 — Encoder vs Decoder\n\n- **Encoder** (BERT) : self-attention **bidirectionnelle** — chaque token voit tous les autres. Pour la compréhension (classification, NER).\n- **Decoder** (GPT) : self-attention **causale** — un masque triangulaire empêche de voir les tokens futurs. Pour la génération.\n- **Encoder-Decoder** (T5, traduction) : le decoder utilise le **cross-attention** pour consulter l'encoder.`,
+      },
+      {
+        type: 'text',
+        content: `## 12.7 — Masque Causal\n\nPour la génération autoregressive (GPT), on applique un masque **triangulaire inférieur** avant le softmax. Les positions futures sont remplies de −∞, ce qui donne un poids d'attention de 0 après softmax. Le token n ne peut voir que les tokens 1..n.`,
       },
       {
         type: 'callout',
-        content: '🧠 Le self-attention est un **hypernetwork** : une branche du réseau (Q,K) calcule les poids pour une autre branche (V). C\'est ce qui rend les Transformers si flexibles — les connexions dépendent des données elles-mêmes.',
+        content: '🧠 **Hypernetwork** : le self-attention est un réseau dont les poids (attention scores) sont eux-mêmes calculés par le réseau. C\'est ce qui le rend si flexible — les connexions **dépendent des données**.\n\n📊 **Échelle** : BERT-base = 110M params, GPT-2 = 1.5B, GPT-3 = 175B, GPT-4 ~ 1.8T (estimé). La loi d\'échelle montre que la performance s\'améliore en power-law avec la taille.',
       },
     ],
     exercises: [
       {
         id: 'attn-ex1',
-        title: 'Self-Attention from scratch',
-        instructions: 'Implémentez le scaled dot-product attention manuellement (sans nn.MultiheadAttention).',
+        title: '💻 Pratique — Self-Attention from scratch',
+        instructions: 'Implémentez le scaled dot-product attention manuellement (sans nn.MultiheadAttention), puis ajoutez le masque causal.',
         starterCode: `import torch
 import torch.nn as nn
 import math
 
-# Dimensions
 d_model = 64
 seq_len = 5
 batch = 1
 
-# Projections Q, K, V
 W_q = nn.Linear(d_model, d_model)
 W_k = nn.Linear(d_model, d_model)
 W_v = nn.Linear(d_model, d_model)
@@ -2593,14 +4405,19 @@ Q = W_q(x)
 K = W_k(x)
 V = W_v(x)
 
-# Scaled dot-product attention
+# ── 1. Attention bidirectionnelle ──
 scores = ___  # Q @ K^T / sqrt(d_k)
 weights = ___  # softmax(scores)
 output = ___   # weights @ V
+print(f"Bidirectional output: {output.shape}")
 
-print(f"Scores shape: {scores.shape}")
-print(f"Attention weights shape: {weights.shape}")
-print(f"Output shape: {output.shape}")`,
+# ── 2. Attention causale (masque triangulaire) ──
+mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).bool()
+scores_causal = scores.masked_fill(mask, float('-inf'))
+weights_causal = torch.softmax(scores_causal, dim=-1)
+output_causal = weights_causal @ V
+print(f"Causal output: {output_causal.shape}")
+print(f"Causal weights row 0: {weights_causal[0, 0]}")  # seul le 1er token a un poids`,
         solution: `import torch
 import torch.nn as nn
 import math
@@ -2619,17 +4436,137 @@ Q = W_q(x)
 K = W_k(x)
 V = W_v(x)
 
+# ── 1. Attention bidirectionnelle ──
 scores = (Q @ K.transpose(-2, -1)) / math.sqrt(d_model)
 weights = torch.softmax(scores, dim=-1)
 output = weights @ V
+print(f"Bidirectional output: {output.shape}")
 
-print(f"Scores shape: {scores.shape}")
-print(f"Attention weights shape: {weights.shape}")
-print(f"Output shape: {output.shape}")`,
+# ── 2. Attention causale ──
+mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).bool()
+scores_causal = scores.masked_fill(mask, float('-inf'))
+weights_causal = torch.softmax(scores_causal, dim=-1)
+output_causal = weights_causal @ V
+print(f"Causal output: {output_causal.shape}")
+print(f"Causal weights row 0: {weights_causal[0, 0]}")`,
         hints: [
           'scores = (Q @ K.transpose(-2, -1)) / math.sqrt(d_model)',
-          'weights = torch.softmax(scores, dim=-1)',
-          'output = weights @ V',
+          'Le masque causal met -inf aux positions futures, le softmax les transforme en 0',
+        ],
+        completed: false,
+      },
+      {
+        id: 'attn-ex2',
+        title: '💻 Pratique — Transformer Block complet',
+        instructions: 'Construisez un bloc Transformer complet avec Multi-Head Attention, FFN, résiduel et LayerNorm.',
+        starterCode: `import torch
+import torch.nn as nn
+import math
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, d_model, n_heads):
+        super().__init__()
+        self.d_k = d_model // n_heads
+        self.n_heads = n_heads
+        self.W_qkv = nn.Linear(d_model, 3 * d_model)
+        self.W_o = nn.Linear(d_model, d_model)
+    
+    def forward(self, x, mask=None):
+        B, T, C = x.shape
+        qkv = self.W_qkv(x).reshape(B, T, 3, self.n_heads, self.d_k)
+        qkv = qkv.permute(2, 0, 3, 1, 4)  # (3, B, H, T, dk)
+        Q, K, V = qkv[0], qkv[1], qkv[2]
+        
+        scores = (Q @ K.transpose(-2, -1)) / math.sqrt(self.d_k)
+        if mask is not None:
+            scores = scores.masked_fill(mask, float('-inf'))
+        attn = torch.softmax(scores, dim=-1)
+        out = (attn @ V).transpose(1, 2).contiguous().view(B, T, C)
+        return self.W_o(out)
+
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model, n_heads, d_ff=None):
+        super().__init__()
+        d_ff = d_ff or 4 * d_model
+        self.attn = MultiHeadAttention(d_model, n_heads)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, d_ff),
+            nn.GELU(),
+            nn.Linear(d_ff, d_model),
+        )
+    
+    def forward(self, x, mask=None):
+        # Pre-norm: x + Attn(LN(x))
+        x = x + self.attn(self.norm1(x), mask)
+        x = x + self.ffn(self.norm2(x))
+        return x
+
+# Test
+block = TransformerBlock(d_model=128, n_heads=8)
+x = torch.randn(2, 10, 128)
+out = block(x)
+print(f"Input:  {x.shape}")
+print(f"Output: {out.shape}")
+print(f"Params: {sum(p.numel() for p in block.parameters()):,}")
+print(f"  - Attn: {sum(p.numel() for p in block.attn.parameters()):,}")
+print(f"  - FFN:  {sum(p.numel() for p in block.ffn.parameters()):,}")`,
+        solution: `import torch
+import torch.nn as nn
+import math
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, d_model, n_heads):
+        super().__init__()
+        self.d_k = d_model // n_heads
+        self.n_heads = n_heads
+        self.W_qkv = nn.Linear(d_model, 3 * d_model)
+        self.W_o = nn.Linear(d_model, d_model)
+    
+    def forward(self, x, mask=None):
+        B, T, C = x.shape
+        qkv = self.W_qkv(x).reshape(B, T, 3, self.n_heads, self.d_k)
+        qkv = qkv.permute(2, 0, 3, 1, 4)
+        Q, K, V = qkv[0], qkv[1], qkv[2]
+        
+        scores = (Q @ K.transpose(-2, -1)) / math.sqrt(self.d_k)
+        if mask is not None:
+            scores = scores.masked_fill(mask, float('-inf'))
+        attn = torch.softmax(scores, dim=-1)
+        out = (attn @ V).transpose(1, 2).contiguous().view(B, T, C)
+        return self.W_o(out)
+
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model, n_heads, d_ff=None):
+        super().__init__()
+        d_ff = d_ff or 4 * d_model
+        self.attn = MultiHeadAttention(d_model, n_heads)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, d_ff),
+            nn.GELU(),
+            nn.Linear(d_ff, d_model),
+        )
+    
+    def forward(self, x, mask=None):
+        x = x + self.attn(self.norm1(x), mask)
+        x = x + self.ffn(self.norm2(x))
+        return x
+
+block = TransformerBlock(d_model=128, n_heads=8)
+x = torch.randn(2, 10, 128)
+out = block(x)
+print(f"Input:  {x.shape}")
+print(f"Output: {out.shape}")
+print(f"Params: {sum(p.numel() for p in block.parameters()):,}")
+print(f"  - Attn: {sum(p.numel() for p in block.attn.parameters()):,}")
+print(f"  - FFN:  {sum(p.numel() for p in block.ffn.parameters()):,}")`,
+        hints: [
+          'Pre-norm : LN avant attention et FFN, pas après',
+          'W_qkv projette vers 3×d_model, puis on split en Q, K, V',
+          'd_ff = 4 × d_model est le standard',
         ],
         completed: false,
       },
@@ -2638,55 +4575,64 @@ print(f"Output shape: {output.shape}")`,
 import torch.nn as nn
 import math
 
-# ══ Self-Attention & Transformers ══
+# ══════════════════════════════════════════════════════════════
+# Attention & Transformers — Ch. 12-13 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
-class SelfAttention(nn.Module):
-    """Scaled Dot-Product Self-Attention avec Multi-Head"""
-    def __init__(self, d_model, n_heads):
-        super().__init__()
-        assert d_model % n_heads == 0
-        self.d_k = d_model // n_heads
-        self.n_heads = n_heads
-        self.W_q = nn.Linear(d_model, d_model)
-        self.W_k = nn.Linear(d_model, d_model)
-        self.W_v = nn.Linear(d_model, d_model)
-        self.W_o = nn.Linear(d_model, d_model)
-    
-    def forward(self, x):
-        B, T, C = x.shape
-        
-        # Projections Q, K, V puis split en têtes
-        Q = self.W_q(x).view(B, T, self.n_heads, self.d_k).transpose(1, 2)
-        K = self.W_k(x).view(B, T, self.n_heads, self.d_k).transpose(1, 2)
-        V = self.W_v(x).view(B, T, self.n_heads, self.d_k).transpose(1, 2)
-        
-        # Scaled dot-product attention
-        scores = (Q @ K.transpose(-2, -1)) / math.sqrt(self.d_k)
-        attn = torch.softmax(scores, dim=-1)
-        
-        # Combiner les têtes
-        out = (attn @ V).transpose(1, 2).contiguous().view(B, T, C)
-        return self.W_o(out)
+# ── 1. Scaled Dot-Product Attention ──
+print("═══ Scaled Dot-Product Attention ═══")
+d_model = 64
+seq_len = 8
+x = torch.randn(1, seq_len, d_model)
 
-# Test
-attn = SelfAttention(d_model=64, n_heads=8)
-x = torch.randn(2, 10, 64)  # batch=2, seq_len=10, d_model=64
-out = attn(x)
-print(f"Input:  {x.shape}")
-print(f"Output: {out.shape}")
-print(f"Params: {sum(p.numel() for p in attn.parameters()):,}")
-print(f"Heads:  {attn.n_heads}, d_k: {attn.d_k}")
+W_q = nn.Linear(d_model, d_model)
+W_k = nn.Linear(d_model, d_model)
+W_v = nn.Linear(d_model, d_model)
+
+Q, K, V = W_q(x), W_k(x), W_v(x)
+scores = (Q @ K.transpose(-2, -1)) / math.sqrt(d_model)
+attn_weights = torch.softmax(scores, dim=-1)
+output = attn_weights @ V
+print(f"Attention weights: {attn_weights.shape}")
+print(f"Output: {output.shape}")
+
+# ── 2. Masque causal (GPT-style) ──
+print("\\n═══ Causal Mask ═══")
+causal_mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).bool()
+scores_masked = scores.masked_fill(causal_mask, float('-inf'))
+attn_causal = torch.softmax(scores_masked, dim=-1)
+print(f"Causal attn row 0: {attn_causal[0, 0].tolist()}")
+print(f"Causal attn row 4: {attn_causal[0, 4].tolist()}")
+
+# ── 3. Multi-Head Attention ──
+print("\\n═══ Multi-Head Attention ═══")
+mha = nn.MultiheadAttention(embed_dim=64, num_heads=8, batch_first=True)
+out, weights = mha(x, x, x)
+print(f"MHA output: {out.shape}")
+print(f"MHA weights: {weights.shape}")
+
+# ── 4. Positional Encoding ──
+print("\\n═══ Positional Encoding ═══")
+max_len = 100
+pe = torch.zeros(max_len, d_model)
+pos = torch.arange(0, max_len).unsqueeze(1).float()
+div = torch.exp(torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model))
+pe[:, 0::2] = torch.sin(pos * div)
+pe[:, 1::2] = torch.cos(pos * div)
+print(f"PE shape: {pe.shape}")
+print(f"PE[0, :8]: {pe[0, :8].tolist()}")
+print(f"PE[1, :8]: {pe[1, :8].tolist()}")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 13 — GANs
+  // MODULE 13 — GANs (Ch. 15)
   // ═══════════════════════════════════════
   {
     id: 'gan',
     title: 'Generative Adversarial Networks (GAN)',
     shortTitle: 'GAN',
-    description: 'Génération d\'images via un duel Générateur vs Discriminateur.',
+    description: 'Objectif minimax, entraînement adversarial, mode collapse, WGAN, et astuces pratiques (Ch. 15 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['attention'],
@@ -2694,25 +4640,248 @@ print(f"Heads:  {attn.n_heads}, d_k: {attn.d_k}")
     theory: [
       {
         type: 'text',
-        content: `Un **GAN** met en compétition deux réseaux :\n\n- **Générateur G** : transforme du bruit aléatoire z en données réalistes G(z)\n- **Discriminateur D** : distingue les données réelles des données générées\n\nLe générateur cherche à tromper le discriminateur. Le discriminateur cherche à ne pas être trompé. Ce jeu adversarial conduit le générateur à produire des données de plus en plus réalistes.`,
+        content: `## 15.1 — Le principe adversarial\n\nUn **GAN** met en compétition deux réseaux :\n\n- **Générateur G(z)** : transforme du bruit z ~ N(0,I) en données synthétiques\n- **Discriminateur D(x)** : estime P(x est réel)\n\nG cherche à **tromper** D. D cherche à **ne pas être trompé**. Ce **jeu minimax** produit un équilibre de Nash où G génère des données indistinguables des réelles.`,
       },
       {
         type: 'equation',
-        content: '\\min_G \\max_D \\; \\mathbb{E}_{x}[\\log D(x)] + \\mathbb{E}_{z}[\\log(1 - D(G(z)))]',
-        label: 'Objectif du GAN (Minimax)',
+        content: '\\min_G \\max_D \\; V(D,G) = \\mathbb{E}_{\\mathbf{x} \\sim p_{\\text{data}}}[\\log D(\\mathbf{x})] + \\mathbb{E}_{\\mathbf{z} \\sim p_z}[\\log(1 - D(G(\\mathbf{z}))))]',
+        label: 'Éq. 15.1 — Objectif Minimax du GAN',
+      },
+      {
+        type: 'text',
+        content: `## 15.2 — Algorithme d'entraînement\n\nÀ chaque itération :\n\n**Étape 1 — Entraîner D** (k pas) :\n- Échantillonner un mini-batch réel x et un bruit z\n- Calculer loss_D = −[log D(x) + log(1 − D(G(z)))]\n- Mettre à jour D par gradient ascent\n\n**Étape 2 — Entraîner G** (1 pas) :\n- Échantillonner un bruit z\n- Calculer loss_G = −log D(G(z))  ← "non-saturating" trick\n- Mettre à jour G par gradient descent\n\n⚠️ En pratique, on minimise −log D(G(z)) au lieu de log(1−D(G(z))) pour éviter le vanishing gradient quand G est mauvais.`,
+      },
+      {
+        type: 'diagram',
+        content: `  Architecture GAN
+  ──────────────────────────────────
+       z ~ N(0,I)      x ~ p_data
+          │                │
+          ▼                │
+    ┌───────────┐          │
+    │ Générateur│          │
+    │     G     │          │
+    └─────┬─────┘          │
+          │                │
+       G(z)               x
+          │                │
+          └───────┬────────┘
+                  ▼
+          ┌──────────────┐
+          │Discriminateur│
+          │      D       │
+          └──────┬───────┘
+                 │
+          D(·) ∈ [0,1]
+          0 = faux, 1 = vrai`,
+        label: 'Fig. 15.2 — Architecture GAN',
+      },
+      {
+        type: 'text',
+        content: `## 15.3 — Mode Collapse\n\nLe problème le plus courant des GANs : G apprend à générer seulement **quelques modes** de la distribution au lieu de la distribution complète. Par exemple, G ne produit que des "7" au lieu de tous les chiffres.\n\n**Causes** : G trouve un point fixe qui trompe D systématiquement, donc il n'a pas d'incitation à diversifier.\n\n**Solutions** : mini-batch discrimination, unrolled GAN, feature matching.`,
+      },
+      {
+        type: 'text',
+        content: `## 15.4 — WGAN (Wasserstein GAN)\n\nRemplace la divergence JS par la **distance de Wasserstein** (Earth Mover's Distance), ce qui donne des gradients plus stables et un signal même quand les distributions ne se chevauchent pas.\n\nLe discriminateur devient un **critique** (pas de sigmoid) avec contrainte de Lipschitz :\n- **WGAN** : weight clipping\n- **WGAN-GP** : gradient penalty (λ·(||∇D(x̂)||₂ − 1)²)`,
+      },
+      {
+        type: 'equation',
+        content: '\\min_G \\max_{D \\in \\mathcal{D}_L} \\; \\mathbb{E}_{\\mathbf{x}}[D(\\mathbf{x})] - \\mathbb{E}_{\\mathbf{z}}[D(G(\\mathbf{z}))]',
+        label: 'Éq. 15.8 — Objectif WGAN',
       },
       {
         type: 'callout',
-        content: '⚡ Les GANs sont notoirement difficiles à entraîner (mode collapse, instabilité). Des variantes comme WGAN, StyleGAN, et la progressive growing ont résolu beaucoup de ces problèmes.',
+        content: '⚡ **Astuces d\'entraînement GAN** :\n• Utiliser \\`LeakyReLU(0.2)\\` dans D (pas ReLU)\n• \\`BatchNorm\\` dans G (pas dans D — ou spectral norm)\n• Labels lissés : 0.9 au lieu de 1.0 pour les vrais\n• Adam avec lr=0.0002, betas=(0.5, 0.999)\n• Entraîner D plus souvent que G (k=5 pour WGAN)\n• Architectures notables : DCGAN, StyleGAN, StyleGAN2, StyleGAN3',
       },
     ],
-    exercises: [],
+    exercises: [
+      {
+        id: 'gan-ex1',
+        title: '💻 Pratique — GAN simple sur 2D',
+        instructions: 'Implémentez un GAN qui apprend à générer des points sur un cercle (distribution 2D simple).',
+        starterCode: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+# ── Distribution cible : points sur un cercle ──
+def sample_circle(n, noise=0.05):
+    theta = torch.rand(n) * 2 * 3.14159
+    x = torch.stack([torch.cos(theta), torch.sin(theta)], dim=1)
+    return x + torch.randn_like(x) * noise
+
+# ── Générateur ──
+G = nn.Sequential(
+    nn.Linear(2, 64),
+    nn.ReLU(),
+    nn.Linear(64, 64),
+    nn.ReLU(),
+    nn.Linear(64, 2),
+)
+
+# ── Discriminateur ──
+D = nn.Sequential(
+    nn.Linear(2, 64),
+    nn.LeakyReLU(0.2),
+    nn.Linear(64, 64),
+    nn.LeakyReLU(0.2),
+    nn.Linear(64, 1),
+    nn.Sigmoid(),
+)
+
+opt_G = torch.optim.Adam(G.parameters(), lr=0.0002, betas=(0.5, 0.999))
+opt_D = torch.optim.Adam(D.parameters(), lr=0.0002, betas=(0.5, 0.999))
+criterion = nn.BCELoss()
+
+# ── Entraînement ──
+for epoch in range(2000):
+    # 1. Entraîner D
+    real = sample_circle(128)
+    z = torch.randn(128, 2)
+    fake = G(z).detach()
+    
+    loss_D = criterion(D(real), torch.ones(128, 1)) + \\
+             criterion(D(fake), torch.zeros(128, 1))
+    opt_D.zero_grad()
+    loss_D.backward()
+    opt_D.step()
+    
+    # 2. Entraîner G
+    z = torch.randn(128, 2)
+    fake = G(z)
+    loss_G = criterion(D(fake), torch.ones(128, 1))  # tromper D
+    opt_G.zero_grad()
+    loss_G.backward()
+    opt_G.step()
+    
+    if (epoch + 1) % 500 == 0:
+        print(f"Epoch {epoch+1:4d} | D loss: {loss_D.item():.4f} | G loss: {loss_G.item():.4f}")
+
+# ── Résultat ──
+z = torch.randn(500, 2)
+generated = G(z).detach()
+print(f"\\nMoyenne rayon généré: {generated.norm(dim=1).mean():.3f} (cible ≈ 1.0)")`,
+        solution: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+def sample_circle(n, noise=0.05):
+    theta = torch.rand(n) * 2 * 3.14159
+    x = torch.stack([torch.cos(theta), torch.sin(theta)], dim=1)
+    return x + torch.randn_like(x) * noise
+
+G = nn.Sequential(
+    nn.Linear(2, 64), nn.ReLU(),
+    nn.Linear(64, 64), nn.ReLU(),
+    nn.Linear(64, 2),
+)
+
+D = nn.Sequential(
+    nn.Linear(2, 64), nn.LeakyReLU(0.2),
+    nn.Linear(64, 64), nn.LeakyReLU(0.2),
+    nn.Linear(64, 1), nn.Sigmoid(),
+)
+
+opt_G = torch.optim.Adam(G.parameters(), lr=0.0002, betas=(0.5, 0.999))
+opt_D = torch.optim.Adam(D.parameters(), lr=0.0002, betas=(0.5, 0.999))
+criterion = nn.BCELoss()
+
+for epoch in range(2000):
+    real = sample_circle(128)
+    z = torch.randn(128, 2)
+    fake = G(z).detach()
+    
+    loss_D = criterion(D(real), torch.ones(128, 1)) + \\
+             criterion(D(fake), torch.zeros(128, 1))
+    opt_D.zero_grad()
+    loss_D.backward()
+    opt_D.step()
+    
+    z = torch.randn(128, 2)
+    fake = G(z)
+    loss_G = criterion(D(fake), torch.ones(128, 1))
+    opt_G.zero_grad()
+    loss_G.backward()
+    opt_G.step()
+    
+    if (epoch + 1) % 500 == 0:
+        print(f"Epoch {epoch+1:4d} | D loss: {loss_D.item():.4f} | G loss: {loss_G.item():.4f}")
+
+z = torch.randn(500, 2)
+generated = G(z).detach()
+print(f"\\nMoyenne rayon généré: {generated.norm(dim=1).mean():.3f} (cible ≈ 1.0)")`,
+        hints: [
+          'G(z).detach() empêche les gradients de G de fuiter dans D',
+          'loss_G utilise torch.ones — on veut que D dise "vrai" pour les faux',
+        ],
+        completed: false,
+      },
+      {
+        id: 'gan-th1',
+        title: '🧠 Théorie — Comparer GAN vs WGAN',
+        instructions: 'Implémentez un WGAN-GP (Wasserstein GAN with Gradient Penalty) et comparez la stabilité avec un GAN classique.',
+        starterCode: `import torch
+import torch.nn as nn
+
+# ── Gradient Penalty (WGAN-GP) ──
+def gradient_penalty(D, real, fake, lambda_gp=10.0):
+    """Calcule la pénalité de gradient pour WGAN-GP"""
+    alpha = torch.rand(real.size(0), 1)
+    interpolated = (alpha * real + (1 - alpha) * fake).requires_grad_(True)
+    d_out = D(interpolated)
+    
+    gradients = torch.autograd.grad(
+        outputs=d_out,
+        inputs=interpolated,
+        grad_outputs=torch.ones_like(d_out),
+        create_graph=True,
+        retain_graph=True,
+    )[0]
+    
+    gp = lambda_gp * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return gp
+
+print("💡 WGAN-GP : le critique (D sans sigmoid) est contraint")
+print("   à être 1-Lipschitz via la pénalité de gradient")
+print("   → gradients stables, pas de mode collapse")`,
+        solution: `import torch
+import torch.nn as nn
+
+def gradient_penalty(D, real, fake, lambda_gp=10.0):
+    alpha = torch.rand(real.size(0), 1)
+    interpolated = (alpha * real + (1 - alpha) * fake).requires_grad_(True)
+    d_out = D(interpolated)
+    
+    gradients = torch.autograd.grad(
+        outputs=d_out,
+        inputs=interpolated,
+        grad_outputs=torch.ones_like(d_out),
+        create_graph=True,
+        retain_graph=True,
+    )[0]
+    
+    gp = lambda_gp * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return gp
+
+print("WGAN-GP : le critique est contraint à être 1-Lipschitz via gradient penalty")`,
+        hints: [
+          'Le critique WGAN n\'a PAS de sigmoid — sortie non bornée',
+          'La gradient penalty interpole entre vrais et faux pour contraindre ||∇D|| ≈ 1',
+        ],
+        completed: false,
+      },
+    ],
     codeTemplate: `import torch
 import torch.nn as nn
 
-# ══ Generative Adversarial Network (GAN) ══
+# ══════════════════════════════════════════════════════════════
+# Generative Adversarial Networks — Ch. 15 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
 
-# Générateur : bruit → image
+# ── 1. Architecture GAN de base ──
+print("═══ GAN Architecture ═══")
+
 class Generator(nn.Module):
     def __init__(self, latent_dim=100, img_dim=784):
         super().__init__()
@@ -2722,13 +4891,12 @@ class Generator(nn.Module):
             nn.Linear(256, 512),
             nn.LeakyReLU(0.2),
             nn.Linear(512, img_dim),
-            nn.Tanh()
+            nn.Tanh()  # sortie dans [-1, 1]
         )
     
     def forward(self, z):
         return self.net(z)
 
-# Discriminateur : image → réel/faux
 class Discriminator(nn.Module):
     def __init__(self, img_dim=784):
         super().__init__()
@@ -2738,7 +4906,7 @@ class Discriminator(nn.Module):
             nn.Linear(512, 256),
             nn.LeakyReLU(0.2),
             nn.Linear(256, 1),
-            nn.Sigmoid()
+            nn.Sigmoid()  # P(réel)
         )
     
     def forward(self, x):
@@ -2747,27 +4915,41 @@ class Discriminator(nn.Module):
 G = Generator()
 D = Discriminator()
 
-# Générer une image depuis du bruit
-z = torch.randn(1, 100)
-fake_img = G(z)
-score = D(fake_img)
+z = torch.randn(4, 100)
+fake = G(z)
+score = D(fake)
 
-print(f"Bruit z: {z.shape}")
-print(f"Image générée: {fake_img.shape}")
-print(f"Score discriminateur: {score.item():.4f} (0=faux, 1=vrai)")
-print(f"\\nG params: {sum(p.numel() for p in G.parameters()):,}")
+print(f"Bruit z:        {z.shape}")
+print(f"Image générée:  {fake.shape}")
+print(f"Score D(G(z)):  {score.squeeze().tolist()}")
+print(f"G params: {sum(p.numel() for p in G.parameters()):,}")
 print(f"D params: {sum(p.numel() for p in D.parameters()):,}")
+
+# ── 2. Losses ──
+print("\\n═══ GAN Losses ═══")
+criterion = nn.BCELoss()
+real_data = torch.randn(4, 784)
+
+# D loss
+loss_real = criterion(D(real_data), torch.ones(4, 1))
+loss_fake = criterion(D(G(z).detach()), torch.zeros(4, 1))
+loss_D = loss_real + loss_fake
+print(f"D loss: {loss_D.item():.4f}")
+
+# G loss (non-saturating)
+loss_G = criterion(D(G(z)), torch.ones(4, 1))
+print(f"G loss: {loss_G.item():.4f}")
 `,
   },
 
   // ═══════════════════════════════════════
-  // MODULE 14 — DIFFUSION MODELS
+  // MODULE 14 — DIFFUSION MODELS (Ch. 18)
   // ═══════════════════════════════════════
   {
     id: 'diffusion',
     title: 'Modèles de Diffusion',
     shortTitle: 'Diffusion',
-    description: 'Le processus de bruitage/débruitage qui génère des images photoréalistes.',
+    description: 'Forward/reverse process, DDPM, reparameterization trick, U-Net denoiser, classifier-free guidance (Ch. 18 — UDL).',
     status: 'locked',
     progress: 0,
     dependencies: ['attention'],
@@ -2775,75 +4957,351 @@ print(f"D params: {sum(p.numel() for p in D.parameters()):,}")
     theory: [
       {
         type: 'text',
-        content: `Les **modèles de diffusion** apprennent à générer des données en inversant un processus de bruitage progressif. Le modèle apprend à **débruiter** — à chaque étape, il enlève un peu de bruit pour reconstruire l'image originale.\n\n- **Forward process** (encoder) : ajouter progressivement du bruit gaussien à l'image\n- **Reverse process** (decoder) : apprendre à retirer le bruit étape par étape`,
+        content: `## 18.1 — L'idée de la diffusion\n\nLes **modèles de diffusion** apprennent à générer des données en inversant un processus de bruitage progressif en T étapes (typiquement T=1000).\n\n- **Forward process** q(xₜ|xₜ₋₁) : ajouter un petit peu de bruit gaussien à chaque étape. Au bout de T étapes, x_T ≈ bruit pur N(0,I).\n- **Reverse process** p_θ(xₜ₋₁|xₜ) : un réseau neuronal apprend à **débruiter** — retirer le bruit étape par étape pour reconstruire l'image.`,
       },
       {
         type: 'equation',
-        content: 'q(\\mathbf{x}_t | \\mathbf{x}_{t-1}) = \\mathcal{N}(\\mathbf{x}_t; \\sqrt{1-\\beta_t} \\, \\mathbf{x}_{t-1}, \\beta_t \\mathbf{I})',
-        label: 'Forward Process (ajout de bruit)',
+        content: 'q(\\mathbf{x}_t | \\mathbf{x}_{t-1}) = \\mathcal{N}\\big(\\mathbf{x}_t;\\; \\sqrt{1-\\beta_t}\\,\\mathbf{x}_{t-1},\\; \\beta_t \\mathbf{I}\\big)',
+        label: 'Éq. 18.1 — Forward Process (1 étape)',
+      },
+      {
+        type: 'text',
+        content: `## 18.2 — Reparameterization trick\n\nGrâce à la propriété d'additivité des gaussiennes, on peut **sauter directement** à n'importe quel timestep t sans itérer :\n\nEn posant αₜ = 1−βₜ et ᾱₜ = ∏ₛ₌₁ᵗ αₛ, on obtient :`,
       },
       {
         type: 'equation',
-        content: '\\mathcal{L} = \\mathbb{E}_{t, \\mathbf{x}_0, \\boldsymbol{\\epsilon}} \\left[ \\| \\boldsymbol{\\epsilon} - \\boldsymbol{\\epsilon}_\\theta(\\mathbf{x}_t, t) \\|^2 \\right]',
-        label: 'Objectif simplifié (prédire le bruit)',
+        content: '\\mathbf{x}_t = \\sqrt{\\bar{\\alpha}_t}\\,\\mathbf{x}_0 + \\sqrt{1-\\bar{\\alpha}_t}\\,\\boldsymbol{\\epsilon}, \\quad \\boldsymbol{\\epsilon} \\sim \\mathcal{N}(\\mathbf{0}, \\mathbf{I})',
+        label: 'Éq. 18.5 — Closed-form sampling',
+        highlightVar: 'x_t',
+      },
+      {
+        type: 'diagram',
+        content: `  Processus de Diffusion (DDPM)
+  ═══════════════════════════════════════════
+  
+  Forward (bruitage progressif) →
+  ┌─────┐   ┌─────┐   ┌─────┐       ┌─────┐
+  │ x₀  │──▶│ x₁  │──▶│ x₂  │──▶···│ x_T │
+  │image│   │     │   │     │       │bruit│
+  └─────┘   └─────┘   └─────┘       └─────┘
+                                        │
+  ← Reverse (débruitage appris)         │
+  ┌─────┐   ┌─────┐   ┌─────┐       ┌──┴──┐
+  │ x₀  │◀──│ x₁  │◀──│ x₂  │◀──···│ x_T │
+  │image│   │     │   │     │       │bruit│
+  └─────┘   └─────┘   └─────┘       └─────┘
+     ▲          ▲          ▲
+     └─ εθ(xₜ,t) prédit le bruit à chaque étape`,
+        label: 'Fig. 18.1 — Forward et Reverse Process',
+      },
+      {
+        type: 'text',
+        content: `## 18.3 — Objectif d'entraînement (DDPM)\n\nLe réseau εθ apprend à **prédire le bruit** ε ajouté à x₀ pour obtenir xₜ. L'objectif simplifié de Ho et al. (2020) est une simple MSE :`,
+      },
+      {
+        type: 'equation',
+        content: '\\mathcal{L}_{\\text{simple}} = \\mathbb{E}_{t \\sim U(1,T),\\; \\mathbf{x}_0,\\; \\boldsymbol{\\epsilon}} \\Big[ \\big\\| \\boldsymbol{\\epsilon} - \\boldsymbol{\\epsilon}_\\theta(\\mathbf{x}_t, t) \\big\\|^2 \\Big]',
+        label: 'Éq. 18.10 — Objectif simplifié DDPM',
         highlightVar: 'loss',
       },
       {
+        type: 'text',
+        content: `## 18.4 — Architecture U-Net\n\nLe denoiser εθ est typiquement un **U-Net** : un réseau encodeur-décodeur avec des **skip connections** entre couches de même résolution. Le timestep t est injecté via un **embedding sinusoidal** (comme le positional encoding des Transformers).\n\n**Stable Diffusion** ajoute du **cross-attention** dans le U-Net pour conditionner la génération sur du texte (CLIP embeddings).`,
+      },
+      {
+        type: 'text',
+        content: `## 18.5 — Sampling (génération)\n\n**Algorithme DDPM Sampling** :\n1. Échantillonner x_T ~ N(0, I)\n2. Pour t = T, T−1, ..., 1 :\n   a. Prédire le bruit : ε̂ = εθ(xₜ, t)\n   b. Calculer xₜ₋₁ = (1/√αₜ)(xₜ − (βₜ/√(1−ᾱₜ))ε̂) + σₜz\n3. Retourner x₀\n\n⚠️ 1000 étapes de débruitage = lent → **DDIM** (50 étapes), **DPM-Solver** (20 étapes).`,
+      },
+      {
+        type: 'text',
+        content: `## 18.6 — Classifier-Free Guidance\n\nPour contrôler la génération avec un **prompt texte**, on entraîne le même modèle avec et sans condition (en dropout du prompt avec probabilité p=0.1). À l'inférence, on amplifie la direction conditionnelle :\n\nε̂ = εθ(xₜ, ∅) + w · (εθ(xₜ, c) − εθ(xₜ, ∅))\n\nw > 1 (typiquement 7.5) renforce l'adhérence au prompt au détriment de la diversité.`,
+      },
+      {
         type: 'callout',
-        content: '🧠 DALL-E, Stable Diffusion, et Midjourney utilisent tous des modèles de diffusion. L\'idée clé : au lieu de générer une image d\'un coup, on la "débruite" progressivement depuis du bruit pur en T étapes (typiquement T=1000).',
+        content: '🧠 **Modèles notables** :\n• **DDPM** (Ho 2020) : l\'article fondateur\n• **DALL-E 2** (OpenAI) : diffusion + CLIP\n• **Stable Diffusion** (Stability AI) : diffusion dans l\'espace latent (LDM)\n• **Midjourney** : variante propriétaire\n• **Imagen** (Google) : cascaded diffusion\n• **FLUX, SD3** : architectures DiT (Diffusion Transformer) — remplacent le U-Net par des Transformers',
       },
     ],
-    exercises: [],
-    codeTemplate: `import torch
+    exercises: [
+      {
+        id: 'diff-ex1',
+        title: '💻 Pratique — Forward Process DDPM',
+        instructions: 'Implémentez le forward process et visualisez comment une image se dégrade progressivement avec le bruit.',
+        starterCode: `import torch
 import torch.nn as nn
 
-# ══ Modèle de Diffusion — Concept simplifié ══
+torch.manual_seed(42)
 
-class SimpleDenoiser(nn.Module):
-    """Réseau qui prédit le bruit ajouté à une image"""
-    def __init__(self, dim=784):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(dim + 1, 512),  # +1 pour le timestep t
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, dim)
-        )
-    
-    def forward(self, x_noisy, t):
-        """Prédit le bruit epsilon à partir de x_noisy et t"""
-        t_embed = t.unsqueeze(-1)  # (batch, 1)
-        inp = torch.cat([x_noisy, t_embed], dim=-1)
-        return self.net(inp)
-
-# ── Forward process : ajouter du bruit ──
+# ── Schedule de bruit ──
 T = 1000
 betas = torch.linspace(0.0001, 0.02, T)
 alphas = 1 - betas
 alpha_bar = torch.cumprod(alphas, dim=0)
 
-def add_noise(x0, t, noise=None):
-    """Ajoute du bruit au timestep t"""
+# ── Forward process : sauter directement au timestep t ──
+def forward_diffusion(x0, t, noise=None):
+    """Ajoute du bruit au timestep t (closed-form)"""
     if noise is None:
         noise = torch.randn_like(x0)
-    sqrt_ab = torch.sqrt(alpha_bar[t]).unsqueeze(-1)
-    sqrt_1_ab = torch.sqrt(1 - alpha_bar[t]).unsqueeze(-1)
+    sqrt_ab = torch.sqrt(alpha_bar[t]).view(-1, 1)
+    sqrt_1_ab = torch.sqrt(1 - alpha_bar[t]).view(-1, 1)
     return sqrt_ab * x0 + sqrt_1_ab * noise, noise
 
-# Test
-model = SimpleDenoiser(dim=784)
-x0 = torch.randn(4, 784)  # 4 images "propres"
-t = torch.randint(0, T, (4,))  # timesteps aléatoires
+# ── Test sur un "signal" 1D ──
+x0 = torch.sin(torch.linspace(0, 4 * 3.14159, 100)).unsqueeze(0)  # signal sinusoïdal
 
-x_noisy, true_noise = add_noise(x0, t)
-pred_noise = model(x_noisy, t.float() / T)
+print(f"{'t':>6} │ {'ᾱₜ':>8} │ {'SNR (dB)':>10} │ {'x_t std':>8}")
+print(f"{'─'*6}─┼─{'─'*8}─┼─{'─'*10}─┼─{'─'*8}")
 
-loss = nn.MSELoss()(pred_noise, true_noise)
-print(f"x0 shape: {x0.shape}")
-print(f"x_noisy shape: {x_noisy.shape}")
-print(f"Loss: {loss.item():.4f}")
-print(f"\\nObjectif: prédire le bruit ε ajouté à l'image")
+for t_val in [0, 50, 100, 250, 500, 750, 999]:
+    t = torch.tensor([t_val])
+    x_t, eps = forward_diffusion(x0, t)
+    ab = alpha_bar[t_val].item()
+    snr = 10 * torch.log10(torch.tensor(ab / (1 - ab))).item()
+    print(f"{t_val:6d} │ {ab:8.4f} │ {snr:10.2f} │ {x_t.std():8.4f}")
+
+print(f"\\n→ À t=0, signal intact (ᾱ≈1)")
+print(f"→ À t=999, bruit pur (ᾱ≈0)")`,
+        solution: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+T = 1000
+betas = torch.linspace(0.0001, 0.02, T)
+alphas = 1 - betas
+alpha_bar = torch.cumprod(alphas, dim=0)
+
+def forward_diffusion(x0, t, noise=None):
+    if noise is None:
+        noise = torch.randn_like(x0)
+    sqrt_ab = torch.sqrt(alpha_bar[t]).view(-1, 1)
+    sqrt_1_ab = torch.sqrt(1 - alpha_bar[t]).view(-1, 1)
+    return sqrt_ab * x0 + sqrt_1_ab * noise, noise
+
+x0 = torch.sin(torch.linspace(0, 4 * 3.14159, 100)).unsqueeze(0)
+
+print(f"{'t':>6} │ {'ᾱₜ':>8} │ {'SNR (dB)':>10} │ {'x_t std':>8}")
+print(f"{'─'*6}─┼─{'─'*8}─┼─{'─'*10}─┼─{'─'*8}")
+
+for t_val in [0, 50, 100, 250, 500, 750, 999]:
+    t = torch.tensor([t_val])
+    x_t, eps = forward_diffusion(x0, t)
+    ab = alpha_bar[t_val].item()
+    snr = 10 * torch.log10(torch.tensor(ab / (1 - ab))).item()
+    print(f"{t_val:6d} │ {ab:8.4f} │ {snr:10.2f} │ {x_t.std():8.4f}")
+
+print(f"\\n→ À t=0, signal intact (ᾱ≈1)")
+print(f"→ À t=999, bruit pur (ᾱ≈0)")`,
+        hints: [
+          'alpha_bar = cumprod des (1-beta)',
+          'x_t = sqrt(ᾱₜ)·x₀ + sqrt(1−ᾱₜ)·ε',
+          'Le SNR décroît monotoniquement avec t',
+        ],
+        completed: false,
+      },
+      {
+        id: 'diff-ex2',
+        title: '💻 Pratique — Denoiser simple + training loop',
+        instructions: 'Entraînez un petit denoiser MLP sur des données 1D pour comprendre la boucle DDPM.',
+        starterCode: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+# ── Schedule ──
+T = 200
+betas = torch.linspace(0.001, 0.02, T)
+alphas = 1 - betas
+alpha_bar = torch.cumprod(alphas, dim=0)
+
+# ── Données : distribution bimodale 1D ──
+def sample_data(n):
+    mix = torch.rand(n) > 0.5
+    return mix.float() * 2 - 1 + torch.randn(n) * 0.1  # pics à -1 et +1
+
+# ── Denoiser ──
+class Denoiser(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(2, 128),   # x_t + t_embed
+            nn.SiLU(),
+            nn.Linear(128, 128),
+            nn.SiLU(),
+            nn.Linear(128, 1),
+        )
+    
+    def forward(self, x_t, t_norm):
+        inp = torch.stack([x_t, t_norm], dim=-1)
+        return self.net(inp).squeeze(-1)
+
+model = Denoiser()
+opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+# ── Training ──
+for step in range(3000):
+    x0 = sample_data(256)
+    t = torch.randint(0, T, (256,))
+    eps = torch.randn_like(x0)
+    
+    x_t = torch.sqrt(alpha_bar[t]) * x0 + torch.sqrt(1 - alpha_bar[t]) * eps
+    eps_pred = model(x_t, t.float() / T)
+    
+    loss = nn.MSELoss()(eps_pred, eps)
+    opt.zero_grad()
+    loss.backward()
+    opt.step()
+    
+    if (step + 1) % 1000 == 0:
+        print(f"Step {step+1:4d} | Loss: {loss.item():.4f}")
+
+# ── Sampling ──
+print("\\n═══ Sampling ═══")
+x = torch.randn(1000)
+for t in reversed(range(T)):
+    t_batch = torch.full((1000,), t)
+    eps_pred = model(x, t_batch.float() / T)
+    
+    alpha_t = alphas[t]
+    alpha_bar_t = alpha_bar[t]
+    x = (1 / torch.sqrt(alpha_t)) * (x - (betas[t] / torch.sqrt(1 - alpha_bar_t)) * eps_pred)
+    if t > 0:
+        x = x + torch.sqrt(betas[t]) * torch.randn_like(x)
+
+print(f"Échantillons générés — mean: {x.mean():.3f}, std: {x.std():.3f}")
+print(f"Modes attendus: -1 et +1")
+print(f"Fraction < 0: {(x < 0).float().mean():.2f} (attendu ≈ 0.50)")`,
+        solution: `import torch
+import torch.nn as nn
+
+torch.manual_seed(42)
+
+T = 200
+betas = torch.linspace(0.001, 0.02, T)
+alphas = 1 - betas
+alpha_bar = torch.cumprod(alphas, dim=0)
+
+def sample_data(n):
+    mix = torch.rand(n) > 0.5
+    return mix.float() * 2 - 1 + torch.randn(n) * 0.1
+
+class Denoiser(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(2, 128), nn.SiLU(),
+            nn.Linear(128, 128), nn.SiLU(),
+            nn.Linear(128, 1),
+        )
+    
+    def forward(self, x_t, t_norm):
+        inp = torch.stack([x_t, t_norm], dim=-1)
+        return self.net(inp).squeeze(-1)
+
+model = Denoiser()
+opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+for step in range(3000):
+    x0 = sample_data(256)
+    t = torch.randint(0, T, (256,))
+    eps = torch.randn_like(x0)
+    
+    x_t = torch.sqrt(alpha_bar[t]) * x0 + torch.sqrt(1 - alpha_bar[t]) * eps
+    eps_pred = model(x_t, t.float() / T)
+    
+    loss = nn.MSELoss()(eps_pred, eps)
+    opt.zero_grad()
+    loss.backward()
+    opt.step()
+    
+    if (step + 1) % 1000 == 0:
+        print(f"Step {step+1:4d} | Loss: {loss.item():.4f}")
+
+print("\\n═══ Sampling ═══")
+x = torch.randn(1000)
+for t in reversed(range(T)):
+    t_batch = torch.full((1000,), t)
+    eps_pred = model(x, t_batch.float() / T)
+    
+    alpha_t = alphas[t]
+    alpha_bar_t = alpha_bar[t]
+    x = (1 / torch.sqrt(alpha_t)) * (x - (betas[t] / torch.sqrt(1 - alpha_bar_t)) * eps_pred)
+    if t > 0:
+        x = x + torch.sqrt(betas[t]) * torch.randn_like(x)
+
+print(f"Échantillons générés — mean: {x.mean():.3f}, std: {x.std():.3f}")
+print(f"Modes attendus: -1 et +1")
+print(f"Fraction < 0: {(x < 0).float().mean():.2f} (attendu ≈ 0.50)")`,
+        hints: [
+          'x_t = sqrt(ᾱₜ)·x₀ + sqrt(1−ᾱₜ)·ε — le forward process',
+          'Le sampling inverse la formule étape par étape',
+          'Le denoiser reçoit x_t et t normalisé comme entrées',
+        ],
+        completed: false,
+      },
+    ],
+    codeTemplate: `import torch
+import torch.nn as nn
+
+# ══════════════════════════════════════════════════════════════
+# Modèles de Diffusion — Ch. 18 Understanding Deep Learning
+# ══════════════════════════════════════════════════════════════
+
+# ── 1. Noise Schedule ──
+print("═══ Noise Schedule DDPM ═══")
+T = 1000
+betas = torch.linspace(0.0001, 0.02, T)
+alphas = 1 - betas
+alpha_bar = torch.cumprod(alphas, dim=0)
+
+print(f"β_1 = {betas[0]:.4f}, β_T = {betas[-1]:.4f}")
+print(f"ᾱ_1 = {alpha_bar[0]:.4f}, ᾱ_T = {alpha_bar[-1]:.6f}")
+
+# ── 2. Forward Process ──
+print("\\n═══ Forward Process ═══")
+x0 = torch.randn(1, 784)  # image "propre"
+
+def add_noise(x0, t, noise=None):
+    if noise is None:
+        noise = torch.randn_like(x0)
+    sqrt_ab = torch.sqrt(alpha_bar[t]).view(-1, 1)
+    sqrt_1_ab = torch.sqrt(1 - alpha_bar[t]).view(-1, 1)
+    return sqrt_ab * x0 + sqrt_1_ab * noise, noise
+
+for t_val in [0, 100, 500, 999]:
+    t = torch.tensor([t_val])
+    x_t, _ = add_noise(x0, t)
+    print(f"  t={t_val:4d}: ᾱ={alpha_bar[t_val]:.4f}, ||x_t||={x_t.norm():.2f}")
+
+# ── 3. Simple Denoiser ──
+print("\\n═══ Denoiser Architecture ═══")
+class SimpleDenoiser(nn.Module):
+    def __init__(self, dim=784):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim + 1, 512),
+            nn.SiLU(),
+            nn.Linear(512, 512),
+            nn.SiLU(),
+            nn.Linear(512, dim)
+        )
+    
+    def forward(self, x_noisy, t_norm):
+        inp = torch.cat([x_noisy, t_norm.unsqueeze(-1)], dim=-1)
+        return self.net(inp)
+
+model = SimpleDenoiser()
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")
+
+# ── 4. Training step ──
+print("\\n═══ Training Step ═══")
+t = torch.randint(0, T, (4,))
+eps = torch.randn(4, 784)
+x_t = torch.sqrt(alpha_bar[t]).unsqueeze(1) * x0 + torch.sqrt(1 - alpha_bar[t]).unsqueeze(1) * eps
+eps_pred = model(x_t, t.float() / T)
+loss = nn.MSELoss()(eps_pred, eps)
+print(f"Loss (untrained): {loss.item():.4f}")
+print(f"Objectif: prédire le bruit ε ajouté à x₀")
 `,
   },
 ];
