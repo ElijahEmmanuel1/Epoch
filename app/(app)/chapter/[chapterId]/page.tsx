@@ -12,12 +12,16 @@ import { chaptersData } from "@/lib/data/chapters";
 import { ShallowNetViz } from "@/components/chapter/3/ShallowNetViz";
 import { NetworkDiagram } from "@/components/chapter/3/NetworkDiagram";
 import { ReLUHinge } from "@/components/chapter/3/ReLUHinge";
+import { DeepNetworkDiagram } from "@/components/chapter/4/DeepNetworkDiagram";
+import { MatrixVis } from "@/components/chapter/4/MatrixVis";
 
 // Map of interactive components
 const InteractiveComponents: Record<string, React.ComponentType<any>> = {
     "ShallowNetViz": ShallowNetViz,
     "NetworkDiagram": NetworkDiagram,
     "ReLUHinge": ReLUHinge,
+    "DeepNetworkDiagram": DeepNetworkDiagram,
+    "MatrixVis": MatrixVis,
 };
 
 // Generate metadata dynamically

@@ -128,5 +128,71 @@ export const chaptersData: Record<string, ChapterData> = {
             { type: "callout", variant: "warning", title: "Problème 3.3", text: "Dérivez des expressions pour les positions des 'joints' dans la fonction en termes des dix paramètres φ et de l'entrée x." },
             { type: "callout", variant: "warning", title: "Problème 3.5", text: "Prouvez que la propriété suivante est vraie pour α ∈ R+ : ReLU[α · z] = α · ReLU[z]. C'est ce qu'on appelle la propriété d'homogénéité non négative de la fonction ReLU." }
         ]
+    },
+    "4": {
+        id: 4,
+        title: "Réseaux de Neurones Profonds",
+        description: "Les réseaux profonds avec plusieurs couches cachées peuvent approximer des fonctions complexes plus efficacement que les réseaux superficiels.",
+        estimatedTime: "120 min",
+        objectives: [
+            "Comprendre la composition de réseaux de neurones",
+            "Maîtriser la notation matricielle pour les réseaux profonds",
+            "Comparer l'efficacité des réseaux profonds vs superficiels",
+            "Analyser le rôle de la profondeur et de la largeur"
+        ],
+        content: [
+            { type: "paragraph", text: "Le chapitre précédent décrivait les réseaux de neurones superficiels, qui ont une seule couche cachée. Ce chapitre introduit les réseaux de neurones profonds, qui ont plus d'une couche cachée. Avec les fonctions d'activation ReLU, les réseaux superficiels et profonds décrivent tous deux des mappages linéaires par morceaux de l'entrée à la sortie." },
+            { type: "paragraph", text: "À mesure que le nombre d'unités cachées augmente, les réseaux de neurones superficiels améliorent leur pouvoir descriptif. Cependant, pour certaines fonctions, le nombre requis d'unités cachées est trop grand. Les réseaux profonds peuvent produire beaucoup plus de régions linéaires que les réseaux superficiels pour un nombre donné de paramètres." },
+
+            { type: "heading", text: "4.1 Composition de réseaux de neurones" },
+            { type: "paragraph", text: "Pour comprendre le comportement des réseaux profonds, considérons d'abord la composition de deux réseaux superficiels de sorte que la sortie du premier devienne l'entrée du second." },
+            { type: "paragraph", text: "Considérons deux réseaux superficiels avec trois unités cachées chacun. Le premier prend x et renvoie y :" },
+            { type: "math-block", latex: "h_1 = a[\\theta_{10} + \\theta_{11} x], \\quad y = \\phi_0 + \\phi_1 h_1 + \\dots" },
+            { type: "paragraph", text: "Le second réseau prend y comme entrée et renvoie y' :" },
+            { type: "math-block", latex: "h'_1 = a[\\theta'_{10} + \\theta'_{11} y], \\quad y' = \\phi'_0 + \\phi'_1 h'_1 + \\dots" },
+            { type: "paragraph", text: "Cette composition crée une fonction plus complexe. Le premier réseau 'plie' l'espace d'entrée, et le second applique une fonction sur cet espace plié, dupliquant ainsi l'effet de la fonction." },
+
+            { type: "heading", text: "4.2 De la composition aux réseaux profonds" },
+            { type: "paragraph", text: "La section précédente a montré que nous pouvions créer des fonctions complexes en passant la sortie d'un réseau superficiel dans un second. C'est un cas particulier d'un réseau profond à deux couches cachées." },
+
+            { type: "heading", text: "4.3 Réseaux de neurones profonds" },
+            { type: "paragraph", text: "Considérons le cas général d'un réseau profond avec deux couches cachées. La première couche est définie par :" },
+            { type: "math-block", latex: "h_1 = a[\\theta_{10} + \\theta_{11} x], \\dots" },
+            { type: "paragraph", text: "La deuxième couche par :" },
+            { type: "math-block", latex: "h'_1 = a[\\psi_{10} + \\psi_{11} h_1 + \\psi_{12} h_2 + \\psi_{13} h_3], \\dots" },
+            { type: "paragraph", text: "Et la sortie par :" },
+            { type: "math-block", latex: "y' = \\phi'_0 + \\phi'_1 h'_1 + \\phi'_2 h'_2 + \\phi'_3 h'_3" },
+
+            { type: "interactive", component: "DeepNetworkDiagram" },
+
+            { type: "heading", text: "4.3.1 Hyperparamètres" },
+            { type: "paragraph", text: "Nous pouvons étendre la construction à plus de deux couches cachées. Le nombre d'unités cachées dans chaque couche est appelé la largeur (width) du réseau, et le nombre de couches cachées la profondeur (depth). K désigne le nombre de couches et D le nombre d'unités par couche." },
+
+            { type: "heading", text: "4.4 Notation Matricielle" },
+            { type: "paragraph", text: "La notation équationnelle devient lourde pour les grands réseaux. Nous utilisons la notation matricielle :" },
+            { type: "math-block", latex: "\\mathbf{h}_k = a[\\boldsymbol{\\beta}_{k-1} + \\boldsymbol{\\Omega}_{k-1} \\mathbf{h}_{k-1}]" },
+            { type: "paragraph", text: "où h est le vecteur des unités cachées, β est le vecteur de biais, et Ω est la matrice de poids." },
+
+            { type: "interactive", component: "MatrixVis" },
+
+            { type: "heading", text: "4.5 Superficiel vs Profond" },
+            { type: "paragraph", text: "Les réseaux profonds ont plusieurs avantages théoriques et pratiques :" },
+            {
+                type: "list", items: [
+                    "Efficacité en nombre de régions : Les réseaux profonds créent exponentiellement plus de régions linéaires par paramètre.",
+                    "Efficacité de profondeur : Certaines fonctions nécessitent exponentiellement plus d'unités dans un réseau superficiel pour être approximées.",
+                    "Abstraction hiérarchique : Adaptés aux données structurées comme les images (voir Chapitre 10)."
+                ]
+            },
+
+            { type: "heading", text: "4.6 Résumé" },
+            { type: "paragraph", text: "Ce chapitre a montré comment la composition de réseaux mène aux architectures profondes. Nous avons introduit la notation matricielle et discuté de l'efficacité supérieure des réseaux profonds en termes de régions linéaires et de capacité d'approximation pour un budget de paramètres donné." },
+
+            { type: "heading", text: "Problèmes" },
+            { type: "callout", variant: "warning", title: "Problème 4.1", text: "Considérez la composition de deux réseaux de neurones. Tracez un graphique de la relation entre l'entrée x et la sortie y' pour x ∈ [-1, 1]." },
+            { type: "callout", variant: "warning", title: "Problème 4.2", text: "Identifiez les quatre hyperparamètres dans la figure 4.6." },
+            { type: "callout", variant: "warning", title: "Problème 4.5", text: "Considérez un réseau profond avec Di=5 entrées, Do=1 sortie, et K=20 couches cachées contenant chacune D=30 unités. Quelle est la profondeur de ce réseau ? Quelle est sa largeur ?" },
+            { type: "callout", variant: "warning", title: "Problème 4.10", text: "Montrez qu'un réseau profond avec un certain nombre de couches K et d'unités D aura un total de 3D + 1 + (K-1)D(D+1) paramètres." }
+        ]
     }
 };
