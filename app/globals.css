@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-noto-sans);
+  --font-serif: var(--font-noto-serif);
+  
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  
+  --color-border: var(--border);
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #09090b; /* Zinc 950 */
+  
+  --primary: #18181b; /* Zinc 900 */
+  --primary-foreground: #fafafa; /* Zinc 50 */
+  
+  --muted: #f4f4f5; /* Zinc 100 */
+  --muted-foreground: #71717a; /* Zinc 500 */
+  
+  --border: #e4e4e7; /* Zinc 200 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b; /* Zinc 950 */
+    --foreground: #fafafa; /* Zinc 50 */
+    
+    --primary: #fafafa; /* Zinc 50 */
+    --primary-foreground: #18181b; /* Zinc 900 */
+    
+    --muted: #27272a; /* Zinc 800 */
+    --muted-foreground: #a1a1aa; /* Zinc 400 */
+    
+    --border: #27272a; /* Zinc 800 */
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+p, li, blockquote {
+  font-family: var(--font-serif), serif;
+}
