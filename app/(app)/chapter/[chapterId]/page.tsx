@@ -10,10 +10,14 @@ import { ArrowLeft, ArrowRight, Clock, BookOpen, Lightbulb, Code } from "lucide-
 import { notFound } from "next/navigation";
 import { chaptersData } from "@/lib/data/chapters";
 import { ShallowNetViz } from "@/components/chapter/3/ShallowNetViz";
+import { NetworkDiagram } from "@/components/chapter/3/NetworkDiagram";
+import { ReLUHinge } from "@/components/chapter/3/ReLUHinge";
 
 // Map of interactive components
 const InteractiveComponents: Record<string, React.ComponentType<any>> = {
     "ShallowNetViz": ShallowNetViz,
+    "NetworkDiagram": NetworkDiagram,
+    "ReLUHinge": ReLUHinge,
 };
 
 // Generate metadata dynamically
