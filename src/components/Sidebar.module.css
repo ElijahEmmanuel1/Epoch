@@ -173,3 +173,51 @@
   margin-top: 6px;
   text-align: right;
 }
+
+/* ── Mobile Drawer ── */
+.mobileDrawer {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 280px;
+  min-width: 280px;
+  z-index: 150;
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.closeBtn:hover {
+  color: var(--cyan);
+  border-color: var(--cyan-dim);
+}
+
+/* ── Tablet — narrower sidebar ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    width: 200px;
+    min-width: 200px;
+  }
+}
+
+/* ── Mobile — hidden by default (controlled via JS) ── */
+@media (max-width: 768px) {
+  .sidebar:not(.mobileDrawer) {
+    display: none;
+  }
+}

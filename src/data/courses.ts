@@ -28,11 +28,13 @@ export interface Exercise {
 }
 
 export interface TheoryBlock {
-  type: 'text' | 'equation' | 'diagram' | 'callout';
+  type: 'text' | 'equation' | 'diagram' | 'callout' | 'code';
   content: string;
   label?: string;
+  title?: string;       // for titled blocks like code examples
   highlightVar?: string; // variable name that links to code
   diagramId?: string;    // when set on a 'diagram' block, renders an SVG component instead of ASCII <pre>
+  language?: string;     // for 'code' blocks
 }
 
 // ── Sample Course Data ──
@@ -348,252 +350,146 @@ print(col + row)
       // ──────── SECTION 1 : INTRODUCTION ────────
       {
         type: 'text',
-        content: `Le chapitre 2 a introduit la régression linéaire (une droite). Mais une droite ne peut pas capturer de relations complexes. Les **réseaux superficiels** (shallow neural networks) décrivent des **fonctions linéaires par morceaux** (piecewise linear functions) suffisamment expressives pour approximer n'importe quelle relation entre entrées et sorties.`,
+        content: `Le Chapitre 3 explore comment les **réseaux superficiels** (une seule couche cachée) peuvent approximer des fonctions complexes.\n\nContrairement à la régression linéaire qui ne produit que des droites, les réseaux de neurones créent des **fonctions linéaires par morceaux** (piecewise linear). L'intuition clé est qu'en additionnant suffisamment de morceaux simples, on peut reconstruire n'importe quelle courbe.`,
       },
+
+      // ──────── SECTION 2 : L'ATOME (ReLU) ────────
+      {
+        type: 'text',
+        content: `## 3.1 — L'atome de construction : ReLU\n\nL'élément de base est une unité cachée avec activation **ReLU** (Rectified Linear Unit). Elle produit une "rampe" clippée à zéro :`,
+      },
+      {
+        type: 'equation',
+        content: 'h(x) = \\text{ReLU}(\\theta_0 + \\theta_1 x) = \\max(0, \\theta_0 + \\theta_1 x)',
+        label: 'Éq. 3.2 — Une unité cachée (La Rampe)',
+      },
+      {
+        type: 'diagram',
+        content: `      |        /
+      |       / pente θ₁
+      |      /
+  ____|_____/_________
+      |    -θ₀/θ₁`,
+        label: 'Fig 3.1 — Une seule unité ReLU forme une rampe',
+      },
+      {
+        type: 'text',
+        content: `**Paramètres :**\n- **θ₁ (pente)** : contrôle la raideur de la rampe.\n- **θ₀ (biais)** : contrôle où la rampe commence (le point de rupture).\n- **Le "joint"** se trouve à $x = -\\theta_0 / \\theta_1$.`,
+      },
+
+      // ──────── SECTION 3 : CONSTRUIRE UNE BOSSE ────────
+      {
+        type: 'text',
+        content: `## 3.2 — Construire une "Bosse" (Bump)\n\nC'est l'intuition la plus importante du livre (UDL). Comment obtenir une fonction complexe ? En additionnant des **bosses** locales.\n\n**Étape 1 : Faire une pente (2 ReLUs)**\nEn soustrayant une rampe décalée à une autre, on peut créer une pente qui monte puis s'arrête (devient plate).`,
+      },
+      {
+        type: 'diagram',
+        content: `      _______
+     /
+    /  Combiner 2 ReLUs
+___/   (un positif, un négatif)
+Start  Stop`,
+        diagramId: 'slope-construction',
+        label: 'Fig 3.4 — 2 ReLUs forment une pente finie',
+      },
+      {
+        type: 'text',
+        content: `**Étape 2 : Faire une bosse (4 ReLUs)**\nEn combinant deux pentes (une qui monte, une qui descend), on crée une **bosse** isolée.`,
+      },
+      {
+        type: 'diagram',
+        content: `      _______
+     /       \\
+    /         \\
+___/           \\____
+ Unit   Unit   Unit
+ 1&2    3&4    ...`,
+        diagramId: 'bump-construction',
+        label: 'Fig 3.5 — 4 ReLUs forment une bosse (Bump)',
+      },
+      {
+        type: 'code',
+        language: 'python',
+        content: `import torch
+import matplotlib.pyplot as plt
+
+def relu(x): return torch.clamp(x, min=0)
+
+x = torch.linspace(0, 5, 100)
+
+# Une bosse faite de 2 pentes (donc 4 ReLUs implis)
+# Pente montante : ReLU(x) - ReLU(x-1)
+slope_up = relu(x) - relu(x - 1)
+
+# Pente descendante : ReLU(x-2) - ReLU(x-3)
+slope_down = relu(x - 2) - relu(x - 3)
+
+# Bosse = Montée - Descente
+bump = slope_up - slope_down
+
+# Visualisation (pseudo-code)
+# plot(x, bump) -> Forme trapézoïdale [0,1,2,3]`,
+        title: 'Exemple : Construire une bosse en PyTorch'
+      },
+
+      // ──────── SECTION 4 : APPROXIMATION UNIVERSELLE ────────
+      {
+        type: 'text',
+        content: `## 3.3 — Théorème d'Approximation Universelle\n\nSi on peut créer une bosse, on peut en créer une infinité, de toutes tailles et hauteurs.\n\n**Intuition** : N'importe quelle fonction continue $y = f(x)$ peut être approximée en juxtaposant des bosses côte à côte, comme des briques Lego.`,
+      },
+      {
+        type: 'equation',
+        content: 'y = \\sum_{j} \\nu_j \\cdot g_j(x)',
+        label: 'Somme de fonctions bosses g(x) pondérées',
+      },
+      {
+        type: 'text',
+        content: `Chaque unité cachée ajoute un "joint" (un point d'inflexion). Avec **D unités cachées**, on peut créer un réseau qui a jusqu'à **D régions linéaires**. Plus on a d'unités, plus l'approximation est fine.`,
+      },
+
+      // ──────── SECTION 5 : RÉSEAUX PROFONDS vs SUPERFICIELS ────────
       {
         type: 'callout',
-        content: '💡 Un réseau "superficiel" désigne un réseau avec **une seule couche cachée** (hidden layer). Ce terme contraste avec "profond" (deep), qui désigne les réseaux à plusieurs couches cachées (Ch. 4).',
+        content: '🧠 **Pourquoi aller plus profond (Deep Learning) ?**\nLe théorème dit qu\'un réseau superficiel **PEUT** tout approximer, mais il ne dit pas que c\'est efficace. Pour approximer des fonctions très oscillantes, il faudrait une largeur D exponentielle. Les réseaux profonds (Chap. 4) sont beaucoup plus efficaces en paramètres.',
       },
 
-      // ──────── SECTION 2 : L'EXEMPLE DU RÉSEAU ────────
+      // ──────── SECTION 6 : PYTORCH IMPLEMENTATION ────────
       {
         type: 'text',
-        content: `## 3.1 — Exemple de réseau neuronal\n\nConsidérons un réseau avec **10 paramètres** ϕ = {ϕ₀, ϕ₁, ϕ₂, ϕ₃, θ₁₀, θ₁₁, θ₂₀, θ₂₁, θ₃₀, θ₃₁} qui transforme un scalaire x en un scalaire y. Le calcul se fait en **3 étapes** :`,
+        content: `## 3.4 — Implémentation PyTorch\n\nUn réseau superficiel est simplement une couche linéaire, suivie d'une non-linéarité, suivie d'une couche linéaire.`,
       },
       {
         type: 'diagram',
-        content: '',
-        diagramId: 'shallow-net-pipeline',
-        label: 'Fig. 3.3 — Pipeline de calcul d\'un réseau superficiel',
+        content: `  ┌──────────────────────────────────────────────┐
+  │  model = nn.Sequential(                      │
+  │      nn.Linear(D_i, D),    # Couche Cachée    │
+  │      nn.ReLU(),           # Activation       │
+  │      nn.Linear(D, D_o)    # Couche Sortie    │
+  │  )                                           │
+  └──────────────────────────────────────────────┘`,
+        label: 'Structure Standard dans PyTorch',
       },
       {
-        type: 'equation',
-        content: 'y = f[x, \\boldsymbol{\\phi}] = \\phi_0 + \\phi_1 \\, a[\\theta_{10} + \\theta_{11} x] + \\phi_2 \\, a[\\theta_{20} + \\theta_{21} x] + \\phi_3 \\, a[\\theta_{30} + \\theta_{31} x]',
-        label: 'Éq. 3.1 — Réseau superficiel (Shallow Network)',
-        highlightVar: 'output',
+        type: 'text',
+        content: `**Nombre de paramètres** (Problème 3.17) :\nPour $D_i$ entrées, $D$ cachées, $D_o$ sorties :\n- Couche 1 : $D \\times D_i$ poids + $D$ biais\n- Couche 2 : $D_o \\times D$ poids + $D_o$ biais\n\nTotal = $D(D_i + 1) + D_o(D + 1)$`,
       },
 
-      // ──────── SECTION 3 : ReLU ────────
+      // ──────── SECTION 7 : HAUTE DIMENSION ────────
       {
         type: 'text',
-        content: `## 3.1.1 — La fonction d'activation ReLU\n\nLa fonction d'activation **a[•]** est ce qui rend le réseau **non-linéaire**. Sans elle, le réseau ne serait qu'une autre fonction linéaire (voir Problème 3.1). Le choix le plus courant est le **ReLU** (Rectified Linear Unit) :`,
+        content: `## 3.5 — Entrées Multidimensionnelles\n\nQuand l'entrée $x$ a plusieurs dimensions ($D_i > 1$), chaque unité cachée définit un **hyperplan** de coupure dans l'espace d'entrée.\n\nL'espace est découpé en régions convexes appelées **polytopes**. Dans chaque polytope, le réseau se comporte comme une simple fonction linéaire affine. C'est l'intersection de tous ces demi-espaces actifs qui définit la complexité du modèle.`,
       },
       {
         type: 'equation',
-        content: 'a[z] = \\text{ReLU}[z] = \\max(0, z) = \\begin{cases} 0 & \\text{si } z < 0 \\\\ z & \\text{si } z \\geq 0 \\end{cases}',
-        label: 'Éq. 3.2 — Rectified Linear Unit (ReLU)',
-        highlightVar: 'relu',
+        content: 'N_{regions} = \\sum_{j=0}^{D_i} \\binom{D}{j}',
+        label: 'Théorème de Zaslavsky : nb max de régions',
       },
-      {
-        type: 'diagram',
-        content: '',
-        diagramId: 'relu-graph',
-        label: 'Fig. 3.1 — Graphe du ReLU : retourne z si z ≥ 0, sinon 0',
-      },
-      {
-        type: 'text',
-        content: `**En PyTorch**, le ReLU existe sous 3 formes :\n\n- **\`torch.relu(tensor)\`** — fonction simple appliquée à un tenseur\n- **\`torch.clamp(tensor, min=0)\`** — équivalent plus explicite\n- **\`nn.ReLU()\`** — module réutilisable dans un \`nn.Sequential\` ou \`nn.Module\`\n\n**Pourquoi ReLU est si populaire ?** Sa dérivée vaut 1 pour z > 0 et 0 pour z < 0. Cela rend le gradient stable pendant la backpropagation (contrairement au sigmoid/tanh qui "saturent").`,
-      },
+
+      // ──────── SECTION 8 : RÉSUMÉ ────────
       {
         type: 'callout',
-        content: '⚠ **Le problème du "dying ReLU"** : si toutes les entrées d\'un neurone sont négatives, le ReLU retourne toujours 0 et le gradient est nul. Ce neurone est "mort" — il ne peut plus apprendre. Solutions : Leaky ReLU (pente 0.01 pour z < 0), Parametric ReLU, ou ELU.',
-      },
-
-      // ──────── SECTION 4 : UNITÉS CACHÉES ────────
-      {
-        type: 'text',
-        content: `## 3.1.2 — Les unités cachées (Hidden Units)\n\nLe calcul se décompose naturellement en **unités cachées** h₁, h₂, h₃. Chaque unité est un neurone qui applique une fonction linéaire de l'entrée puis la passe par ReLU :`,
-      },
-      {
-        type: 'equation',
-        content: '\\begin{aligned} h_1 &= a[\\theta_{10} + \\theta_{11}x] \\\\ h_2 &= a[\\theta_{20} + \\theta_{21}x] \\\\ h_3 &= a[\\theta_{30} + \\theta_{31}x] \\end{aligned}',
-        label: 'Éq. 3.3 — Calcul des unités cachées',
-        highlightVar: 'relu',
-      },
-      {
-        type: 'text',
-        content: `Puis la sortie combine linéairement ces unités cachées :`,
-      },
-      {
-        type: 'equation',
-        content: 'y = \\phi_0 + \\phi_1 h_1 + \\phi_2 h_2 + \\phi_3 h_3',
-        label: 'Éq. 3.4 — Combinaison linéaire de sortie',
-        highlightVar: 'output',
-      },
-
-      // ──────── SECTION 5 : PATTERNS D'ACTIVATION ────────
-      {
-        type: 'text',
-        content: `## 3.1.3 — Régions linéaires & Patterns d'activation\n\nChaque unité cachée crée un **"joint"** (coude) dans la fonction de sortie — le point où la droite θ•₀ + θ•₁x croise zéro. De part et d'autre de ce joint, l'unité est soit **active** (z ≥ 0, passe l'entrée) soit **inactive** (z < 0, retourne 0).\n\nAvec 3 unités cachées, on obtient jusqu'à **4 régions linéaires** et **3 joints**. Chaque région correspond à un **pattern d'activation** différent :`,
-      },
-      {
-        type: 'diagram',
-        content: '',
-        diagramId: 'piecewise-linear',
-        label: 'Fig. 3.2 — Fonction linéaire par morceaux avec 4 régions',
-      },
-      {
-        type: 'callout',
-        content: '🧠 **Intuition clé** : la pente de chaque région est la somme des pentes θ•₁ × ϕ• des unités **actives** dans cette région. L\'offset ϕ₀ contrôle la hauteur globale. C\'est ainsi qu\'on "dessine" des fonctions complexes morceau par morceau.',
-      },
-
-      // ──────── SECTION 6 : NOTATION MATRICIELLE ────────
-      {
-        type: 'text',
-        content: `## 3.2 — Notation matricielle & PyTorch\n\nOn regroupe le calcul en notation matricielle. Soit **β₀** le vecteur de biais de la couche cachée, **Ω₀** la matrice de poids d'entrée, **β₁** le biais de sortie, et **ω₁** les poids de sortie :`,
-      },
-      {
-        type: 'equation',
-        content: '\\mathbf{h} = a\\!\\left[\\boldsymbol{\\beta}_0 + \\boldsymbol{\\Omega}_0 \\mathbf{x}\\right] \\qquad y = \\beta_1 + \\boldsymbol{\\omega}_1^T \\mathbf{h}',
-        label: 'Notation matricielle compacte',
-        highlightVar: 'hidden',
-      },
-      {
-        type: 'text',
-        content: `**En PyTorch, \`nn.Linear(in, out)\`** implémente exactement cette opération :\n\n- Il stocke une matrice de poids **W** de taille (out × in)\n- Un vecteur de biais **b** de taille (out)\n- La sortie est : **output = x @ W.T + b**\n\nUn réseau superficiel complet se construit avec :`,
-      },
-      {
-        type: 'diagram',
-        content: `  ┌──────────────────────────────────────────────────┐
-  │  model = nn.Sequential(                          │
-  │      nn.Linear(D_i, D),    # Ω₀·x + β₀          │
-  │      nn.ReLU(),            # a[•]                │
-  │      nn.Linear(D, D_o)     # ω₁ᵀ·h + β₁          │
-  │  )                                               │
-  └──────────────────────────────────────────────────┘
-
-  Où :
-    D_i = dimension d'entrée
-    D   = nombre d'unités cachées (hidden units)
-    D_o = dimension de sortie`,
-        label: 'Construction PyTorch d\'un réseau superficiel',
-      },
-      {
-        type: 'text',
-        content: `**Fonctions PyTorch utiles pour cette étape :**\n\n- **\`nn.Sequential(*layers)\`** : empile des couches en séquence, forward automatique\n- **\`nn.Linear(in_features, out_features)\`** : couche dense (transformation affine)\n- **\`nn.ReLU()\`** : module d'activation ReLU (réutilisable)\n- **\`model.parameters()\`** : itérateur sur tous les poids/biais du modèle\n- **\`sum(p.numel() for p in model.parameters())\`** : compte le nombre total de paramètres`,
-      },
-
-      // ──────── SECTION 7 : NOMBRE DE PARAMÈTRES ────────
-      {
-        type: 'text',
-        content: `## 3.3 — Comptage des paramètres\n\nUn réseau superficiel avec **Dᵢ** entrées, **D** unités cachées et **Dₒ** sorties a :`,
-      },
-      {
-        type: 'equation',
-        content: 'N_{\\text{params}} = \\underbrace{D \\cdot (D_i + 1)}_{\\text{couche cachée}} + \\underbrace{D_o \\cdot (D + 1)}_{\\text{couche de sortie}}',
-        label: 'Éq. — Nombre de paramètres (Problème 3.17)',
-      },
-      {
-        type: 'text',
-        content: `Exemple : Dᵢ = 1, D = 3, Dₒ = 1 → 3×(1+1) + 1×(3+1) = 6 + 4 = **10 paramètres** — exactement les 10 de l'Éq. 3.1 !\n\nExemple 2 : Dᵢ = 784 (image 28×28), D = 100, Dₒ = 10 → 100×785 + 10×101 = 78,500 + 1,010 = **79,510 paramètres**.`,
-      },
-
-      // ──────── SECTION 8 : THÉORÈME D'APPROXIMATION ────────
-      {
-        type: 'text',
-        content: `## 3.4 — Théorème d'approximation universelle\n\nAvec D unités cachées et ReLU, le réseau crée au maximum **D + 1 régions linéaires**. Plus la fonction cible est complexe, plus il faut de régions (et donc d'unités) pour l'approximer :`,
-      },
-      {
-        type: 'diagram',
-        content: '',
-        diagramId: 'universal-approximation',
-        label: 'Fig. 3.5 — Approximation : plus de hidden units → plus de régions → meilleure fidélité',
-      },
-      {
-        type: 'callout',
-        content: '🧠 **Théorème d\'approximation universelle** (Cybenko 1989, Hornik 1991) : pour toute fonction continue f définie sur un compact et tout ε > 0, il existe un réseau superficiel avec suffisamment d\'unités cachées tel que |f(x) - réseau(x)| < ε pour tout x. En d\'autres termes, un réseau à **une seule couche cachée peut approximer n\'importe quelle fonction continue** !',
-      },
-
-      // ──────── SECTION 9 : ENTRÉES/SORTIES MULTIDIMENSIONNELLES ────────
-      {
-        type: 'text',
-        content: `## 3.5 — Entrées et sorties multidimensionnelles\n\n**Entrées multiples (Dᵢ > 1)** : chaque unité cachée reçoit une combinaison linéaire de **toutes** les entrées. Par exemple avec 2 entrées x = [x₁, x₂]ᵀ :`,
-      },
-      {
-        type: 'equation',
-        content: 'h_d = a\\!\\left[\\theta_{d0} + \\theta_{d1} x_1 + \\theta_{d2} x_2\\right]',
-        label: 'Éq. 3.9 — Unité cachée avec 2 entrées',
-      },
-      {
-        type: 'text',
-        content: `En 2D, le ReLU crée des **hyperplans** (droites) qui divisent le plan d'entrée en **régions convexes polygonales**. Chaque région a une surface linéaire différente.\n\n**Sorties multiples (Dₒ > 1)** : on utilise une combinaison linéaire **différente** des mêmes unités cachées pour chaque sortie. Les joints restent aux mêmes positions, mais les pentes varient.`,
-      },
-      {
-        type: 'text',
-        content: `**Nombre de régions en haute dimension** :\n\nAvec Dᵢ ≥ 2 et D unités cachées, le nombre maximum de régions est donné par la formule de Zaslavsky (1975) :`,
-      },
-      {
-        type: 'equation',
-        content: 'N_{\\text{regions}} = \\sum_{j=0}^{D_i} \\binom{D}{j}',
-        label: 'Formule de Zaslavsky — Nombre max de régions',
-      },
-      {
-        type: 'text',
-        content: `Avec Dᵢ dimensions et D ≥ Dᵢ unités cachées, on crée au minimum **2^Dᵢ** régions (en alignant chaque hyperplan avec un axe de coordonnées). Exemple : D = 500, Dᵢ = 100 → plus de **10¹⁰⁷** régions !`,
-      },
-
-      // ──────── SECTION 10 : TERMINOLOGIE ────────
-      {
-        type: 'text',
-        content: `## 3.6 — Terminologie\n\nLe réseau est décrit en **couches** (layers) :\n\n- **Input layer** (couche d'entrée) : les données x\n- **Hidden layer** (couche cachée) : les neurones hd avec ReLU\n- **Output layer** (couche de sortie) : la prédiction y\n\nAutres termes importants :`,
-      },
-      {
-        type: 'diagram',
-        content: `  ╔═══════════════════════════════════════════════════════════╗
-  ║                    VOCABULAIRE                            ║
-  ╠══════════════════╤════════════════════════════════════════╣
-  ║ Multi-layer      │ Tout réseau avec ≥ 1 couche cachée    ║
-  ║ perceptron (MLP) │ (terme historique)                    ║
-  ╟──────────────────┼────────────────────────────────────────╢
-  ║ Neurone / Unit   │ Un élément de la couche cachée        ║
-  ╟──────────────────┼────────────────────────────────────────╢
-  ║ Pré-activation   │ Valeur AVANT le ReLU : θ₀ + θ₁x      ║
-  ╟──────────────────┼────────────────────────────────────────╢
-  ║ Activation       │ Valeur APRÈS le ReLU : a[θ₀ + θ₁x]   ║
-  ╟──────────────────┼────────────────────────────────────────╢
-  ║ Weights (poids)  │ Paramètres de pente (θ₁₁, ϕ₁, …)     ║
-  ╟──────────────────┼────────────────────────────────────────╢
-  ║ Biases (biais)   │ Paramètres d'offset (θ₁₀, ϕ₀, …)     ║
-  ╟──────────────────┼────────────────────────────────────────╢
-  ║ Feed-forward     │ Graphe acyclique (pas de boucles)     ║
-  ╟──────────────────┼────────────────────────────────────────╢
-  ║ Fully connected  │ Chaque neurone connecté à tous les    ║
-  ║                  │ neurones de la couche suivante        ║
-  ╚══════════════════╧════════════════════════════════════════╝`,
-        label: 'Fig. 3.12 — Terminologie des réseaux de neurones',
-      },
-
-      // ──────── SECTION 11 : AUTRES ACTIVATIONS ────────
-      {
-        type: 'text',
-        content: `## 3.7 — Autres fonctions d'activation\n\nLe ReLU n'est pas la seule option. Voici les alternatives les plus importantes :`,
-      },
-      {
-        type: 'diagram',
-        content: `  ┌─────────────────┬───────────────────────────────────────┐
-  │ Activation      │ Formule                               │
-  ├─────────────────┼───────────────────────────────────────┤
-  │ Sigmoid σ(z)    │  1 / (1 + e⁻ᶻ)          ∈ (0, 1)     │
-  │ Tanh            │  (eᶻ - e⁻ᶻ)/(eᶻ + e⁻ᶻ)  ∈ (-1, 1)   │
-  │ Leaky ReLU      │  max(0.01z, z)                        │
-  │ Parametric ReLU │  max(αz, z)   α appris                │
-  │ ELU             │  z si z≥0, α(eᶻ-1) sinon             │
-  │ Swish / SiLU    │  z · σ(βz)    β appris                │
-  │ GELU            │  z · Φ(z)     Φ = CDF gaussienne      │
-  │ Softplus        │  log(1 + eᶻ)  version lisse du ReLU   │
-  └─────────────────┴───────────────────────────────────────┘`,
-        label: 'Fig. 3.13 — Catalogue des fonctions d\'activation',
-      },
-      {
-        type: 'text',
-        content: `**En PyTorch**, chaque activation est disponible en module :\n\n- \`nn.ReLU()\`, \`nn.LeakyReLU(0.01)\`, \`nn.ELU(alpha=1.0)\`\n- \`nn.Sigmoid()\`, \`nn.Tanh()\`, \`nn.SiLU()\` (= Swish)\n- \`nn.GELU()\`, \`nn.Softplus()\`\n- \`nn.PReLU()\` — le paramètre α est appris pendant l'entraînement`,
-      },
-
-      // ──────── SECTION 12 : RÉSUMÉ ────────
-      {
-        type: 'callout',
-        content: '⚡ **Résumé du Chapitre 3** :\n(1) Les réseaux superficiels calculent des fonctions linéaires par morceaux\n(2) Chaque unité cachée ajoute un "joint" et une région linéaire\n(3) Avec assez d\'unités, on approxime n\'importe quelle fonction continue\n(4) Le ReLU est l\'activation standard car son gradient est simple et stable\n(5) Le nombre de paramètres est D·(Dᵢ+1) + Dₒ·(D+1)',
-      },
+        content: '⚡ **Résumé du Chapitre 3** :\n(1) 1 neurone ReLU = 1 rampe.\n(2) 2 neurones = 1 pente.\n(3) 4 neurones = 1 bosse.\n(4) Somme de bosses = Approximation Universelle.\n(5) Les réseaux superficiels sont des approximateurs universels mais peuvent être inefficaces.',
+      }
     ],
     exercises: [
       // ═══════════════════════════════════════
@@ -5273,22 +5169,22 @@ print(f"Objectif: prédire le bruit ε ajouté à x₀")
 export const nodePositions: Record<string, { x: number; y: number }> = {
   // Row 1 — Fundamentals
   'supervised-learning': { x: 100, y: 80 },
-  'tensors':             { x: 350, y: 80 },
-  'shallow-networks':    { x: 600, y: 80 },
-  'deep-networks':       { x: 850, y: 80 },
+  'tensors': { x: 350, y: 80 },
+  'shallow-networks': { x: 600, y: 80 },
+  'deep-networks': { x: 850, y: 80 },
   // Row 2 — Training
-  'loss-functions':      { x: 100, y: 260 },
-  'gradient-descent':    { x: 350, y: 260 },
-  'backprop':            { x: 600, y: 260 },
-  'regularization':      { x: 850, y: 260 },
+  'loss-functions': { x: 100, y: 260 },
+  'gradient-descent': { x: 350, y: 260 },
+  'backprop': { x: 600, y: 260 },
+  'regularization': { x: 850, y: 260 },
   // Row 3 — Architectures
-  'cnn':                 { x: 100, y: 440 },
-  'resnet':              { x: 350, y: 440 },
-  'rnn':                 { x: 600, y: 440 },
+  'cnn': { x: 100, y: 440 },
+  'resnet': { x: 350, y: 440 },
+  'rnn': { x: 600, y: 440 },
   // Row 4 — Advanced
-  'attention':           { x: 350, y: 620 },
-  'gan':                 { x: 600, y: 620 },
-  'diffusion':           { x: 850, y: 620 },
+  'attention': { x: 350, y: 620 },
+  'gan': { x: 600, y: 620 },
+  'diffusion': { x: 850, y: 620 },
 };
 
 export function getTotalProgress(nodes: CourseNode[]): number {

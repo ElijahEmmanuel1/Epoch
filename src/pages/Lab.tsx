@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, BookOpen, FlaskConical, ChevronRight, ChevronLeft } from 'lucide-react'
+import { ArrowLeft, BookOpen, FlaskConical, ChevronRight, ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import type { CourseNode } from '../data/courses'
 import NeuralCanvas from '../components/NeuralCanvas'
 import CodeReactor from '../components/CodeReactor'
@@ -19,6 +19,13 @@ export default function Lab({ courses, updateCourse }: Props) {
   const [activeExercise, setActiveExercise] = useState(0)
   const [highlightedVar, setHighlightedVar] = useState<string | null>(null)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   const course = useMemo(
     () => courses.find(c => c.id === courseId),
@@ -80,9 +87,12 @@ export default function Lab({ courses, updateCourse }: Props) {
           {!leftCollapsed && (
             <motion.div
               className={styles.leftPanel}
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: '45%', opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
+              initial={{ [isMobile ? 'height' : 'width']: 0, opacity: 0 }}
+              animate={{
+                [isMobile ? 'height' : 'width']: isMobile ? '45vh' : '45%',
+                opacity: 1,
+              }}
+              exit={{ [isMobile ? 'height' : 'width']: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
               <NeuralCanvas
@@ -102,7 +112,11 @@ export default function Lab({ courses, updateCourse }: Props) {
           title={leftCollapsed ? 'Afficher la théorie' : 'Masquer la théorie'}
         >
           <div className={styles.dividerHandle}>
-            {leftCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            {isMobile ? (
+              leftCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />
+            ) : (
+              leftCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />
+            )}
           </div>
         </button>
 

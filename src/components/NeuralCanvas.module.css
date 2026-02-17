@@ -216,3 +216,89 @@
   gap: 12px;
   color: var(--text-muted);
 }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — NeuralCanvas
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .canvas {
+    padding: 16px;
+  }
+
+  .equation {
+    padding: 14px;
+  }
+
+  .eqContent {
+    font-size: 15px;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .canvas {
+    padding: 12px;
+  }
+
+  .theory {
+    gap: 14px;
+  }
+
+  .text {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .equation {
+    padding: 12px 10px;
+  }
+
+  .eqContent {
+    font-size: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .eqLabel {
+    font-size: 9px;
+    margin-bottom: 8px;
+  }
+
+  .inlineDiagram {
+    padding: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .diagramPre {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .diagramSection {
+    padding: 12px;
+  }
+
+  .callout {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .calloutText {
+    font-size: 12px;
+  }
+
+  .exerciseTitle {
+    font-size: 16px;
+  }
+
+  .exerciseInstructions {
+    font-size: 13px;
+  }
+
+  .hintToggle {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+}

@@ -117,6 +117,25 @@ body {
   100% { transform: translateY(100%); }
 }
 
+/* ── Responsive Breakpoints ──
+   Mobile:  < 768px
+   Tablet:  768px – 1024px
+   Desktop: > 1024px
+   ─────────────────────────── */
+
+/* ── Touch targets — min 44px on mobile ── */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ── Prevent horizontal overflow ── */
+html, body, #root {
+  max-width: 100vw;
+}
+
 /* ── KaTeX styling ── */
 .katex {
   font-size: 1.1em !important;
@@ -125,4 +144,21 @@ body {
 
 .katex .base {
   color: var(--text-primary);
+}
+
+/* ── KaTeX responsive — prevent overflow ── */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0;
+}
+
+@media (max-width: 768px) {
+  .katex {
+    font-size: 0.95em !important;
+  }
+  .katex-display > .katex {
+    font-size: 0.9em !important;
+  }
 }

@@ -183,3 +183,42 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — CodeReactor
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 6px 10px;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .fileLabel {
+    font-size: 11px;
+  }
+
+  .toolBtn {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  .runBtn {
+    padding: 8px 14px;
+    font-size: 11px;
+    width: 100%;
+    justify-content: center;
+    order: 3;
+  }
+
+  .toolbarRight {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .consoleTitle {
+    font-size: 9px;
+  }
+}

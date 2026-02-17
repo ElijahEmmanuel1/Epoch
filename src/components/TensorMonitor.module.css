@@ -131,3 +131,28 @@
   border-radius: 2px;
   background: linear-gradient(90deg, var(--cyan), transparent 50%, var(--magenta));
 }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — TensorMonitor
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .monitor {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .heatmap {
+    margin-left: 8px;
+    padding: 6px;
+  }
+
+  .heatmapCell {
+    width: 16px;
+    height: 16px;
+  }
+
+  .entryText {
+    word-break: break-word;
+  }
+}

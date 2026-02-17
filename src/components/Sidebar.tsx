@@ -1,28 +1,47 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Brain, Map, Zap } from 'lucide-react'
+import { Brain, Map, Zap, X } from 'lucide-react'
 import type { CourseNode } from '../data/courses'
 import { getTotalProgress } from '../data/courses'
 import styles from './Sidebar.module.css'
 
 interface Props {
   courses: CourseNode[]
+  isMobile?: boolean
+  isOpen?: boolean
+  onClose?: () => void
 }
 
-export default function Sidebar({ courses }: Props) {
+export default function Sidebar({ courses, isMobile, isOpen, onClose }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const progress = getTotalProgress(courses)
 
+  const handleNav = (path: string) => {
+    navigate(path)
+    if (isMobile && onClose) onClose()
+  }
+
+  // On mobile, hide when closed
+  if (isMobile && !isOpen) return null
+
   return (
     <motion.aside
-      className={styles.sidebar}
-      initial={{ x: -80 }}
+      className={`${styles.sidebar} ${isMobile ? styles.mobileDrawer : ''}`}
+      initial={{ x: isMobile ? -280 : -80 }}
       animate={{ x: 0 }}
+      exit={{ x: -280 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
+      {/* Mobile close button */}
+      {isMobile && (
+        <button className={styles.closeBtn} onClick={onClose} aria-label="Close menu">
+          <X size={20} />
+        </button>
+      )}
+
       {/* Logo */}
-      <div className={styles.logo} onClick={() => navigate('/')}>
+      <div className={styles.logo} onClick={() => handleNav('/')}>
         <div className={styles.logoIcon}>
           <Brain size={22} />
         </div>
@@ -33,7 +52,7 @@ export default function Sidebar({ courses }: Props) {
       <nav className={styles.nav}>
         <button
           className={`${styles.navItem} ${location.pathname === '/' ? styles.active : ''}`}
-          onClick={() => navigate('/')}
+          onClick={() => handleNav('/')}
         >
           <Map size={18} />
           <span>Roadmap</span>
@@ -49,7 +68,7 @@ export default function Sidebar({ courses }: Props) {
             <button
               key={course.id}
               className={`${styles.navItem} ${isActive ? styles.active : ''} ${isLocked ? styles.locked : ''}`}
-              onClick={() => !isLocked && navigate(`/lab/${course.id}`)}
+              onClick={() => !isLocked && handleNav(`/lab/${course.id}`)}
               disabled={isLocked}
               title={isLocked ? 'Complétez les prérequis' : course.title}
             >

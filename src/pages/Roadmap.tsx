@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Lock, CheckCircle, Circle } from 'lucide-react'
 import type { CourseNode } from '../data/courses'
@@ -10,9 +11,27 @@ interface Props {
   updateCourse: (id: string, partial: Partial<CourseNode>) => void
 }
 
+function useNodeScale() {
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    const compute = () => {
+      const w = window.innerWidth
+      // Below 768: scale down, min 0.55
+      if (w < 768) setScale(Math.max(0.55, w / 1100))
+      else if (w < 1024) setScale(Math.max(0.7, w / 1200))
+      else setScale(1)
+    }
+    compute()
+    window.addEventListener('resize', compute)
+    return () => window.removeEventListener('resize', compute)
+  }, [])
+  return scale
+}
+
 export default function Roadmap({ courses, updateCourse: _updateCourse }: Props) {
   const navigate = useNavigate()
   const progress = getTotalProgress(courses)
+  const nodeScale = useNodeScale()
 
   // Build edges from dependencies
   const edges: { from: string; to: string }[] = []
@@ -97,10 +116,10 @@ export default function Roadmap({ courses, updateCourse: _updateCourse }: Props)
             return (
               <motion.line
                 key={i}
-                x1={from.x + 80}
-                y1={from.y + 40}
-                x2={to.x + 80}
-                y2={to.y + 40}
+                x1={(from.x + 80) * nodeScale}
+                y1={(from.y + 40) * nodeScale}
+                x2={(to.x + 80) * nodeScale}
+                y2={(to.y + 40) * nodeScale}
                 stroke={isActive ? 'var(--cyan-dim)' : 'var(--border)'}
                 strokeWidth={isActive ? 2 : 1}
                 strokeDasharray={isActive ? 'none' : '6 4'}
@@ -121,7 +140,12 @@ export default function Roadmap({ courses, updateCourse: _updateCourse }: Props)
             <motion.div
               key={course.id}
               className={`${styles.node} ${styles[course.status]}`}
-              style={{ left: pos.x, top: pos.y }}
+              style={{
+                left: pos.x * nodeScale,
+                top: pos.y * nodeScale,
+                transform: `scale(${nodeScale})`,
+                transformOrigin: 'top left',
+              }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
