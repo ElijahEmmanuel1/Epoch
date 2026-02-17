@@ -384,11 +384,7 @@ print(col + row)
       },
       {
         type: 'diagram',
-        content: `      _______
-     /
-    /  Combiner 2 ReLUs
-___/   (un positif, un négatif)
-Start  Stop`,
+        content: '',
         diagramId: 'slope-construction',
         label: 'Fig 3.4 — 2 ReLUs forment une pente finie',
       },
@@ -398,12 +394,7 @@ Start  Stop`,
       },
       {
         type: 'diagram',
-        content: `      _______
-     /       \\
-    /         \\
-___/           \\____
- Unit   Unit   Unit
- 1&2    3&4    ...`,
+        content: '',
         diagramId: 'bump-construction',
         label: 'Fig 3.5 — 4 ReLUs forment une bosse (Bump)',
       },

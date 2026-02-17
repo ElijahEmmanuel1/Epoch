@@ -6,13 +6,18 @@
 import { type ComponentType, lazy, Suspense } from 'react'
 
 // Lazy-load diagram components to keep bundle lean
+// Lazy-load diagram components to keep bundle lean
 const ReluGraph = lazy(() => import('./ReluGraph'))
+const SlopeConstructionGraph = lazy(() => import('./SlopeConstructionGraph'))
+const BumpConstructionGraph = lazy(() => import('./BumpConstructionGraph'))
 const PiecewiseLinearGraph = lazy(() => import('./PiecewiseLinearGraph'))
 const ShallowNetPipeline = lazy(() => import('./ShallowNetPipeline'))
 const ApproximationComparison = lazy(() => import('./ApproximationComparison'))
 
 const registry: Record<string, ComponentType> = {
   'relu-graph': ReluGraph,
+  'slope-construction': SlopeConstructionGraph,
+  'bump-construction': BumpConstructionGraph,
   'piecewise-linear': PiecewiseLinearGraph,
   'shallow-net-pipeline': ShallowNetPipeline,
   'universal-approximation': ApproximationComparison,

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import 'katex/dist/katex.min.css'
-import { BlockMath } from 'react-katex'
+import { BlockMath, InlineMath } from 'react-katex'
 import { Lightbulb, AlertTriangle, Info, HelpCircle } from 'lucide-react'
 import type { CourseNode, Exercise, TheoryBlock } from '../data/courses'
 import NeuralDiagram from './NeuralDiagram'
@@ -36,6 +36,10 @@ export default function NeuralCanvas({ course, activeTab, currentExercise, highl
   )
 }
 
+
+
+// ... imports remain the same ...
+
 function TheoryView({
   theory,
   highlightedVar,
@@ -62,19 +66,17 @@ function TheoryView({
           transition={{ delay: i * 0.06 }}
         >
           {block.type === 'text' && (
-            <div
-              className={styles.text}
-              dangerouslySetInnerHTML={{ __html: formatMarkdown(block.content) }}
-            />
+            <div className={styles.text}>
+              <MarkdownRenderer content={block.content} />
+            </div>
           )}
 
           {block.type === 'equation' && (
             <div
-              className={`${styles.equation} ${
-                highlightedVar && block.highlightVar === highlightedVar
-                  ? styles.equationHighlight
-                  : ''
-              }`}
+              className={`${styles.equation} ${highlightedVar && block.highlightVar === highlightedVar
+                ? styles.equationHighlight
+                : ''
+                }`}
             >
               {block.label && <span className={styles.eqLabel}>{block.label}</span>}
               <div className={styles.eqContent}>
@@ -94,20 +96,28 @@ function TheoryView({
             </div>
           )}
 
+          {block.type === 'code' && (
+            <div className={styles.codeBlock}>
+              {block.title && <div className={styles.codeTitle}>{block.title}</div>}
+              <pre>
+                <code className={`language-${block.language || 'python'}`}>
+                  {block.content}
+                </code>
+              </pre>
+            </div>
+          )}
+
           {block.type === 'callout' && (
             <div className={styles.callout}>
               <div className={styles.calloutIcon}>
                 {block.content.startsWith('💡') ? <Lightbulb size={16} /> :
-                 block.content.startsWith('⚠') ? <AlertTriangle size={16} /> :
-                 block.content.startsWith('🧠') ? <HelpCircle size={16} /> :
-                 <Info size={16} />}
+                  block.content.startsWith('⚠') ? <AlertTriangle size={16} /> :
+                    block.content.startsWith('🧠') ? <HelpCircle size={16} /> :
+                      <Info size={16} />}
               </div>
-              <div
-                className={styles.calloutText}
-                dangerouslySetInnerHTML={{
-                  __html: formatMarkdown(block.content.replace(/^[💡⚠🧠⚡]\s*/, '')),
-                }}
-              />
+              <div className={styles.calloutText}>
+                <MarkdownRenderer content={block.content.replace(/^[💡⚠🧠⚡]\s*/, '')} />
+              </div>
             </div>
           )}
         </motion.div>
@@ -116,47 +126,37 @@ function TheoryView({
   )
 }
 
-function ExerciseView({ exercise }: { exercise: Exercise }) {
-  const [showHints, setShowHints] = useState(false)
+// ... ExerciseView ...
+
+// ── Markdown + LaTeX Parser ──
+function MarkdownRenderer({ content }: { content: string }) {
+  // 1. Split by LaTeX delimiters ($...$)
+  const parts = content.split(/(\$[^$]+\$)/g)
+
   return (
-    <div className={styles.exercise}>
-      <div className={styles.exerciseHeader}>
-        <h3 className={styles.exerciseTitle}>{exercise.title}</h3>
-      </div>
-      <div
-        className={styles.exerciseInstructions}
-        dangerouslySetInnerHTML={{ __html: formatMarkdown(exercise.instructions) }}
-      />
-      {exercise.hints.length > 0 && (
-        <div className={styles.hints}>
-          <button
-            className={styles.hintToggle}
-            onClick={() => setShowHints(!showHints)}
-          >
-            <Lightbulb size={14} />
-            {showHints ? 'Masquer les indices' : `${exercise.hints.length} indice(s) disponible(s)`}
-          </button>
-          {showHints && (
-            <motion.ul
-              className={styles.hintList}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-            >
-              {exercise.hints.map((hint, i) => (
-                <li key={i} className={styles.hintItem}>{hint}</li>
-              ))}
-            </motion.ul>
-          )}
-        </div>
-      )}
-    </div>
+    <span>
+      {parts.map((part, index) => {
+        if (part.startsWith('$') && part.endsWith('$')) {
+          // Render inline math
+          return <InlineMath key={index} math={part.slice(1, -1)} />
+        }
+        // Render markdown text
+        return <span key={index} dangerouslySetInnerHTML={{ __html: formatMarkdown(part) }} />
+      })}
+    </span>
   )
 }
 
-// Simple Markdown formatter
 function formatMarkdown(text: string): string {
-  return text
+  // Escape HTML first to prevent XSS (basic)
+  let safe = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+
+  return safe
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`(.*?)`/g, '<code>$1</code>')
     .replace(/\n/g, '<br/>')
 }

@@ -1,89 +1,101 @@
-/**
- * Fig. 3.1 — ReLU function graph: y = max(0, z)
- * Pure SVG, cyberpunk-styled
- */
+import { motion } from 'framer-motion'
+import { useState } from 'react'
+
 export default function ReluGraph() {
-  const W = 520, H = 300
-  const pad = { top: 30, right: 30, bottom: 40, left: 50 }
-  const gw = W - pad.left - pad.right
-  const gh = H - pad.top - pad.bottom
+  const [x, setX] = useState(0.5)
 
-  // Domain: z ∈ [-4, 6], Range: y ∈ [-1, 6]
-  const xMin = -4, xMax = 6, yMin = -1, yMax = 6
-  const sx = (v: number) => pad.left + ((v - xMin) / (xMax - xMin)) * gw
-  const sy = (v: number) => pad.top + ((yMax - v) / (yMax - yMin)) * gh
+  // Map visualization coordinates
+  // Range x: [-2, 2] -> SVG x: [20, 280]
+  // Range y: [-1, 2] -> SVG y: [130, 20]
+  const scaleX = (val: number) => 20 + (val + 2) * (260 / 4)
+  const scaleY = (val: number) => 130 - (val + 1) * (110 / 3)
 
-  // Grid lines
-  const xTicks = [-4, -2, 0, 2, 4, 6]
-  const yTicks = [0, 2, 4, 6]
+  const relu = (v: number) => Math.max(0, v)
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    // Inverse map X
+    const rawX = ((mouseX - 20) / (260 / 4)) - 2
+    const clampedX = Math.max(-2, Math.min(2, rawX))
+    setX(clampedX)
+  }
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth: 520 }}>
-      {/* Background */}
-      <rect width={W} height={H} rx={8} fill="#0d1117" />
+    <div style={{
+      width: '100%',
+      background: 'var(--bg-deep)',
+      borderRadius: 'var(--radius-md)',
+      border: '1px solid var(--border)',
+      padding: 16,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 12
+    }}>
+      <div style={{ fontSize: 14, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+        ReLU({x.toFixed(2)}) = <span style={{ color: 'var(--cyan)' }}>{relu(x).toFixed(2)}</span>
+      </div>
 
-      {/* Grid */}
-      {xTicks.map(t => (
-        <line key={`gx${t}`} x1={sx(t)} x2={sx(t)} y1={pad.top} y2={H - pad.bottom}
-          stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
-      ))}
-      {yTicks.map(t => (
-        <line key={`gy${t}`} x1={pad.left} x2={W - pad.right} y1={sy(t)} y2={sy(t)}
-          stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
-      ))}
+      <svg
+        viewBox="0 0 300 150"
+        style={{ width: '100%', maxWidth: 300, overflow: 'visible', cursor: 'crosshair' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setX(0.5)}
+      >
+        {/* Axes */}
+        <line x1="20" y1={scaleY(0)} x2="280" y2={scaleY(0)} stroke="var(--text-muted)" strokeWidth="1" />
+        <line x1={scaleX(0)} y1="140" x2={scaleX(0)} y2="20" stroke="var(--text-muted)" strokeWidth="1" />
 
-      {/* Axes */}
-      <line x1={pad.left} x2={W - pad.right} y1={sy(0)} y2={sy(0)}
-        stroke="rgba(255,255,255,0.35)" strokeWidth={1.5} />
-      <line x1={sx(0)} x2={sx(0)} y1={pad.top} y2={H - pad.bottom}
-        stroke="rgba(255,255,255,0.35)" strokeWidth={1.5} />
+        {/* Labels */}
+        <text x="280" y={scaleY(0) + 15} fill="var(--text-muted)" fontSize="10">x</text>
+        <text x={scaleX(0) - 15} y="15" fill="var(--text-muted)" fontSize="10">y</text>
 
-      {/* Axis labels */}
-      {xTicks.map(t => (
-        <text key={`lx${t}`} x={sx(t)} y={sy(0) + 18} fill="rgba(255,255,255,0.5)"
-          fontSize={11} textAnchor="middle" fontFamily="monospace">{t}</text>
-      ))}
-      {yTicks.filter(t => t !== 0).map(t => (
-        <text key={`ly${t}`} x={sx(0) - 10} y={sy(t) + 4} fill="rgba(255,255,255,0.5)"
-          fontSize={11} textAnchor="end" fontFamily="monospace">{t}</text>
-      ))}
+        {/* ReLU Function */}
+        <motion.polyline
+          points={`${scaleX(-2)},${scaleY(0)} ${scaleX(0)},${scaleY(0)} ${scaleX(2)},${scaleY(2)}`}
+          fill="none"
+          stroke="var(--cyan)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          filter="drop-shadow(0 0 5px var(--cyan-glow))"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 1 }}
+        />
 
-      {/* Axis names */}
-      <text x={W - pad.right + 8} y={sy(0) + 4} fill="rgba(255,255,255,0.6)"
-        fontSize={13} fontFamily="monospace" fontWeight={700}>z</text>
-      <text x={sx(0) - 6} y={pad.top - 8} fill="rgba(255,255,255,0.6)"
-        fontSize={13} fontFamily="monospace" fontWeight={700} textAnchor="end">y</text>
+        {/* Interactive Point */}
+        <circle
+          cx={scaleX(x)}
+          cy={scaleY(relu(x))}
+          r="6"
+          fill="var(--bg-deep)"
+          stroke="var(--text-primary)"
+          strokeWidth="2"
+        />
 
-      {/* ReLU: flat part z < 0 */}
-      <line x1={sx(xMin)} x2={sx(0)} y1={sy(0)} y2={sy(0)}
-        stroke="#d946ef" strokeWidth={2.5} strokeLinecap="round" />
+        {/* Dotted lines to axes */}
+        <line
+          x1={scaleX(x)} y1={scaleY(relu(x))}
+          x2={scaleX(x)} y2={scaleY(0)}
+          stroke="var(--cyan)"
+          strokeDasharray="2 2"
+          opacity="0.5"
+        />
+        {x > 0 && (
+          <line
+            x1={scaleX(x)} y1={scaleY(relu(x))}
+            x2={scaleX(0)} y2={scaleY(relu(x))}
+            stroke="var(--cyan)"
+            strokeDasharray="2 2"
+            opacity="0.5"
+          />
+        )}
 
-      {/* ReLU: linear part z >= 0 */}
-      <line x1={sx(0)} x2={sx(yMax)} y1={sy(0)} y2={sy(yMax)}
-        stroke="#00e5ff" strokeWidth={2.5} strokeLinecap="round" />
-
-      {/* Origin dot */}
-      <circle cx={sx(0)} cy={sy(0)} r={4} fill="#00e5ff" />
-
-      {/* Glow effect on the active part */}
-      <line x1={sx(0)} x2={sx(yMax)} y1={sy(0)} y2={sy(yMax)}
-        stroke="#00e5ff" strokeWidth={6} strokeLinecap="round" opacity={0.15} />
-
-      {/* Annotations */}
-      <text x={sx(-2.5)} y={sy(0) - 12} fill="#d946ef" fontSize={12}
-        fontFamily="monospace" textAnchor="middle" fontWeight={700}>
-        clipped à 0
-      </text>
-      <text x={sx(4)} y={sy(4) - 12} fill="#00e5ff" fontSize={12}
-        fontFamily="monospace" textAnchor="middle" fontWeight={700}>
-        pente = 1
-      </text>
-
-      {/* Title */}
-      <text x={W / 2} y={H - 8} fill="rgba(255,255,255,0.4)" fontSize={11}
-        textAnchor="middle" fontFamily="monospace">
-        ReLU(z) = max(0, z)
-      </text>
-    </svg>
+      </svg>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>
+        Survolez le graphe pour tester la fonction ! z &lt; 0 → 0
+      </div>
+    </div>
   )
 }
