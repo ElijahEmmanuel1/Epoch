@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Progress } from "@/components/ui/Progress";
+import { CodeEditor } from "@/components/chapter/CodeEditor";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft, ArrowRight, Clock, BookOpen, Lightbulb, Code } from "lucide-react";
@@ -135,6 +136,20 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
                                         <li key={idx} className="leading-relaxed">{item}</li>
                                     ))}
                                 </ul>
+                            );
+                        case "code":
+                            return (
+                                <div key={i} className="my-8">
+                                    <CodeEditor
+                                        title={block.title || "Code"}
+                                        language={block.language || "python"}
+                                        initialCode={block.initialCode || ""}
+                                        expectedOutput={block.expectedOutput}
+                                        description={block.description}
+                                        solution={block.solution}
+                                        hints={block.hints}
+                                    />
+                                </div>
                             );
                         case "callout": {
                             const icons = {
