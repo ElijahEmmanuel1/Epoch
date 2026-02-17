@@ -5,9 +5,10 @@ import {
   Play, RotateCcw, Eye, EyeOff, ChevronUp, ChevronDown,
   Check, Copy, Sparkles
 } from 'lucide-react'
+import { clsx } from 'clsx'
 import type { CourseNode, Exercise } from '../data/courses'
 import TensorMonitor from './TensorMonitor'
-import styles from './CodeReactor.module.css'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface Props {
   course: CourseNode
@@ -20,14 +21,11 @@ interface Props {
 }
 
 export default function CodeReactor({
-  course,
-  activeTab,
-  currentExercise,
-  onHoverVar,
-  updateCourse,
-  activeExercise,
-  setActiveExercise,
+  course, activeTab, currentExercise, onHoverVar,
+  updateCourse, activeExercise, setActiveExercise,
 }: Props) {
+  const { theme } = useTheme()
+
   const initialCode = activeTab === 'exercise' && currentExercise
     ? currentExercise.starterCode
     : course.codeTemplate
@@ -40,7 +38,6 @@ export default function CodeReactor({
   const [copied, setCopied] = useState(false)
   const editorRef = useRef<any>(null)
 
-  // Update code when tab/exercise changes
   const prevTabRef = useRef(activeTab)
   const prevExRef = useRef(activeExercise)
   if (prevTabRef.current !== activeTab || prevExRef.current !== activeExercise) {
@@ -56,15 +53,11 @@ export default function CodeReactor({
 
   const handleEditorMount: OnMount = (editor) => {
     editorRef.current = editor
-
-    // Hover-to-Connect: detect variable hover
     editor.onDidChangeCursorPosition((e) => {
       const model = editor.getModel()
       if (!model) return
       const word = model.getWordAtPosition(e.position)
-      if (word) {
-        onHoverVar(word.word)
-      }
+      if (word) onHoverVar(word.word)
     })
   }
 
@@ -72,8 +65,6 @@ export default function CodeReactor({
     setIsRunning(true)
     setConsoleOutput([])
     setConsoleCollapsed(false)
-
-    // Simulate code execution with parsed output
     setTimeout(() => {
       const output = simulateExecution(code)
       setConsoleOutput(output)
@@ -92,11 +83,7 @@ export default function CodeReactor({
 
   const toggleSolution = () => {
     if (!currentExercise) return
-    if (!showSolution) {
-      setCode(currentExercise.solution)
-    } else {
-      setCode(currentExercise.starterCode)
-    }
+    setCode(showSolution ? currentExercise.starterCode : currentExercise.solution)
     setShowSolution(!showSolution)
   }
 
@@ -107,78 +94,83 @@ export default function CodeReactor({
   }
 
   const markComplete = () => {
-    if (currentExercise) {
-      const updatedExercises = course.exercises.map((ex, i) =>
-        i === activeExercise ? { ...ex, completed: true } : ex
-      )
-      const allComplete = updatedExercises.every(ex => ex.completed)
-      updateCourse(course.id, {
-        exercises: updatedExercises,
-        status: allComplete ? 'completed' : 'in-progress',
-        progress: Math.round((updatedExercises.filter(e => e.completed).length / updatedExercises.length) * 100),
-      })
-      if (activeExercise < course.exercises.length - 1) {
-        setActiveExercise(activeExercise + 1)
-      }
+    if (!currentExercise) return
+    const updatedExercises = course.exercises.map((ex, i) =>
+      i === activeExercise ? { ...ex, completed: true } : ex
+    )
+    const allComplete = updatedExercises.every(ex => ex.completed)
+    updateCourse(course.id, {
+      exercises: updatedExercises,
+      status: allComplete ? 'completed' : 'in-progress',
+      progress: Math.round((updatedExercises.filter(e => e.completed).length / updatedExercises.length) * 100),
+    })
+    if (activeExercise < course.exercises.length - 1) {
+      setActiveExercise(activeExercise + 1)
     }
   }
 
+  const editorTheme = theme === 'dark' ? 'epoch-dark' : 'epoch-light'
+
   return (
-    <div className={styles.reactor}>
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Toolbar */}
-      <div className={styles.toolbar}>
-        <div className={styles.toolbarLeft}>
-          <span className={styles.fileLabel}>
-            <span className={styles.fileDot} />
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 md:px-4 py-2 bg-[var(--bg-surface)] border-b border-[var(--border-default)] shrink-0 transition-colors">
+        <div className="flex items-center">
+          <span className="flex items-center gap-2 font-mono text-xs text-[var(--text-secondary)]">
+            <span className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
             {activeTab === 'exercise' ? `exercise_${activeExercise + 1}.py` : `${course.id}.py`}
           </span>
         </div>
-        <div className={styles.toolbarRight}>
+        <div className="flex items-center gap-1.5 flex-wrap">
           {activeTab === 'exercise' && currentExercise && (
             <>
               <button
-                className={styles.toolBtn}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--border-default)] rounded-md text-[var(--text-muted)] text-[11px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)] transition-all"
                 onClick={toggleSolution}
-                title={showSolution ? 'Masquer la solution' : 'Voir la solution'}
               >
-                {showSolution ? <EyeOff size={14} /> : <Eye size={14} />}
-                <span>{showSolution ? 'Masquer' : 'Solution'}</span>
+                {showSolution ? <EyeOff size={13} /> : <Eye size={13} />}
+                <span className="hidden sm:inline">{showSolution ? 'Masquer' : 'Solution'}</span>
               </button>
-              <button className={styles.toolBtn} onClick={markComplete}>
-                <Check size={14} />
-                <span>Valider</span>
+              <button
+                className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--border-default)] rounded-md text-[var(--text-muted)] text-[11px] hover:bg-[var(--bg-hover)] hover:text-[var(--color-success)] transition-all"
+                onClick={markComplete}
+              >
+                <Check size={13} />
+                <span className="hidden sm:inline">Valider</span>
               </button>
             </>
           )}
-          <button className={styles.toolBtn} onClick={copyCode}>
-            {copied ? <Check size={14} /> : <Copy size={14} />}
+          <button
+            className="flex items-center justify-center w-8 h-8 border border-[var(--border-default)] rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)] transition-all"
+            onClick={copyCode}
+          >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
           </button>
-          <button className={styles.toolBtn} onClick={resetCode}>
-            <RotateCcw size={14} />
+          <button
+            className="flex items-center justify-center w-8 h-8 border border-[var(--border-default)] rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)] transition-all"
+            onClick={resetCode}
+          >
+            <RotateCcw size={13} />
           </button>
           <motion.button
-            className={styles.runBtn}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-primary to-accent text-white font-mono text-xs font-bold tracking-wide disabled:opacity-60 disabled:cursor-wait"
             onClick={runCode}
             disabled={isRunning}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
           >
-            {isRunning ? (
-              <Sparkles size={16} className={styles.spinning} />
-            ) : (
-              <Play size={16} />
-            )}
-            <span>RUN EPOCH</span>
+            {isRunning ? <Sparkles size={14} className="animate-spin" /> : <Play size={14} />}
+            <span>RUN</span>
           </motion.button>
         </div>
       </div>
 
       {/* Editor */}
-      <div className={styles.editorWrapper}>
+      <div className="flex-1 min-h-0 overflow-hidden">
         <Editor
           height="100%"
           language="python"
-          theme="epoch-dark"
+          theme={editorTheme}
           value={code}
           onChange={(value) => setCode(value || '')}
           onMount={handleEditorMount}
@@ -187,32 +179,59 @@ export default function CodeReactor({
               base: 'vs-dark',
               inherit: true,
               rules: [
-                { token: 'comment', foreground: '5c6585', fontStyle: 'italic' },
-                { token: 'keyword', foreground: 'd946ef' },
-                { token: 'string', foreground: '39ffb0' },
-                { token: 'number', foreground: 'ff9100' },
-                { token: 'type', foreground: '00e5ff' },
-                { token: 'function', foreground: '00e5ff' },
-                { token: 'variable', foreground: 'e8eaf6' },
-                { token: 'operator', foreground: 'd946ef' },
-                { token: 'delimiter', foreground: '9fa8c7' },
+                { token: 'comment', foreground: '6b6f85', fontStyle: 'italic' },
+                { token: 'keyword', foreground: '818cf8' },
+                { token: 'string', foreground: '34d399' },
+                { token: 'number', foreground: 'f59e0b' },
+                { token: 'type', foreground: '22d3ee' },
+                { token: 'function', foreground: '6366f1' },
+                { token: 'variable', foreground: 'e4e6f0' },
+                { token: 'operator', foreground: '818cf8' },
+                { token: 'delimiter', foreground: 'a0a4b8' },
               ],
               colors: {
-                'editor.background': '#0d1120',
-                'editor.foreground': '#e8eaf6',
-                'editor.lineHighlightBackground': '#161b3366',
-                'editor.selectionBackground': '#00e5ff33',
-                'editorLineNumber.foreground': '#2a3366',
-                'editorLineNumber.activeForeground': '#5c6585',
-                'editor.inactiveSelectionBackground': '#161b3344',
-                'editorIndentGuide.background': '#1e254522',
-                'editorCursor.foreground': '#00e5ff',
-                'editorWhitespace.foreground': '#1e254544',
+                'editor.background': '#0f1117',
+                'editor.foreground': '#e4e6f0',
+                'editor.lineHighlightBackground': '#1e203022',
+                'editor.selectionBackground': '#6366f133',
+                'editorLineNumber.foreground': '#2a2d42',
+                'editorLineNumber.activeForeground': '#6b6f85',
+                'editor.inactiveSelectionBackground': '#1e203022',
+                'editorIndentGuide.background': '#1e203020',
+                'editorCursor.foreground': '#6366f1',
+                'editorWhitespace.foreground': '#1e203044',
+              },
+            })
+            monaco.editor.defineTheme('epoch-light', {
+              base: 'vs',
+              inherit: true,
+              rules: [
+                { token: 'comment', foreground: '8b8fa5', fontStyle: 'italic' },
+                { token: 'keyword', foreground: '6366f1' },
+                { token: 'string', foreground: '059669' },
+                { token: 'number', foreground: 'd97706' },
+                { token: 'type', foreground: '0891b2' },
+                { token: 'function', foreground: '4f46e5' },
+                { token: 'variable', foreground: '1a1c2e' },
+                { token: 'operator', foreground: '6366f1' },
+                { token: 'delimiter', foreground: '4a4d65' },
+              ],
+              colors: {
+                'editor.background': '#f8f9fc',
+                'editor.foreground': '#1a1c2e',
+                'editor.lineHighlightBackground': '#f1f3f910',
+                'editor.selectionBackground': '#6366f122',
+                'editorLineNumber.foreground': '#c4c6d4',
+                'editorLineNumber.activeForeground': '#8b8fa5',
+                'editor.inactiveSelectionBackground': '#6366f111',
+                'editorIndentGuide.background': '#e0e2ec55',
+                'editorCursor.foreground': '#6366f1',
+                'editorWhitespace.foreground': '#e0e2ec',
               },
             })
           }}
           options={{
-            fontSize: 14,
+            fontSize: 13,
             fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
             fontLigatures: true,
             minimap: { enabled: false },
@@ -234,24 +253,30 @@ export default function CodeReactor({
         />
       </div>
 
-      {/* Console / Tensor Monitor */}
-      <div className={`${styles.console} ${consoleCollapsed ? styles.consoleCollapsed : ''}`}>
+      {/* Console — Tensor Monitor */}
+      <div className={clsx(
+        'shrink-0 border-t border-[var(--border-default)] bg-[var(--bg-surface)] transition-colors',
+        consoleCollapsed && 'h-auto'
+      )}>
         <button
-          className={styles.consoleHeader}
+          className="flex items-center justify-between w-full px-4 py-2.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
           onClick={() => setConsoleCollapsed(!consoleCollapsed)}
         >
-          <span className={styles.consoleTitle}>
-            <span className={styles.consoleDot} data-state={consoleOutput.length > 0 ? 'active' : 'idle'} />
-            TENSOR MONITOR
+          <span className="flex items-center gap-2 font-mono text-[10px] font-bold tracking-widest uppercase">
+            <span className={clsx(
+              'w-1.5 h-1.5 rounded-full',
+              consoleOutput.length > 0 ? 'bg-[var(--color-success)] shadow-[0_0_6px_var(--color-success)]' : 'bg-[var(--text-muted)]'
+            )} />
+            Tensor Monitor
           </span>
           {consoleCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
         <AnimatePresence>
           {!consoleCollapsed && (
             <motion.div
-              className={styles.consoleBody}
+              className="overflow-y-auto overflow-x-hidden"
               initial={{ height: 0 }}
-              animate={{ height: 200 }}
+              animate={{ height: 180 }}
               exit={{ height: 0 }}
               transition={{ duration: 0.3 }}
             >
@@ -264,7 +289,7 @@ export default function CodeReactor({
   )
 }
 
-// ── Console Entry types ──
+/* ── Types ── */
 export interface ConsoleEntry {
   type: 'output' | 'tensor' | 'error' | 'info'
   text: string
@@ -272,48 +297,29 @@ export interface ConsoleEntry {
   values?: number[][]
 }
 
-// ── Simulated Python execution ──
+/* ── Simulation ── */
 function simulateExecution(code: string): ConsoleEntry[] {
   const entries: ConsoleEntry[] = []
-
-  // Parse print statements from code
   const lines = code.split('\n')
 
   for (const line of lines) {
     const trimmed = line.trim()
-
-    // Skip comments and empty lines
     if (trimmed.startsWith('#') || trimmed === '') continue
-
-    // Detect print statements
     if (trimmed.startsWith('print(')) {
       const content = trimmed.match(/print\((.*)\)/)
       if (content) {
         let text = content[1]
-        // Clean up f-string formatting
-        text = text.replace(/^f"/, '').replace(/"$/, '')
-        text = text.replace(/^f'/, '').replace(/'$/, '')
-        text = text.replace(/^"/, '').replace(/"$/, '')
-        text = text.replace(/^'/, '').replace(/'$/, '')
-
-        // Detect tensor shape patterns
+          .replace(/^f?["']/, '').replace(/["']$/, '')
         if (text.includes('.shape') || text.toLowerCase().includes('shape')) {
-          const shapes = ['[3, 4]', '[4, 2]', '[3, 2]', '[32, 128]', '[1, 10]', '[3, 224, 224]']
+          const shapes = ['[3, 4]', '[4, 2]', '[3, 2]', '[32, 128]', '[1, 10]']
           const shape = shapes[Math.floor(Math.random() * shapes.length)]
           entries.push({
-            type: 'tensor',
-            text: text.replace(/\{.*?\}/g, shape),
-            shape,
-            values: generateHeatmapData(3, 4),
+            type: 'tensor', text: text.replace(/\{.*?\}/g, shape), shape,
+            values: Array.from({ length: 3 }, () => Array.from({ length: 4 }, () => Math.random() * 2 - 1)),
           })
         } else if (text.includes('loss') || text.includes('Loss')) {
-          const lossVal = (Math.random() * 2 + 0.1).toFixed(4)
-          entries.push({
-            type: 'output',
-            text: text.replace(/\{.*?\}/g, lossVal),
-          })
+          entries.push({ type: 'output', text: text.replace(/\{.*?\}/g, (Math.random() * 2 + 0.1).toFixed(4)) })
         } else {
-          // General output with simulated values
           let output = text.replace(/\{.*?\.item\(\).*?\}/g, () => (Math.random() * 10 - 5).toFixed(4))
           output = output.replace(/\{.*?\}/g, () => `[${(Math.random()*3).toFixed(2)}, ${(Math.random()*3).toFixed(2)}]`)
           entries.push({ type: 'output', text: output })
@@ -322,20 +328,7 @@ function simulateExecution(code: string): ConsoleEntry[] {
     }
   }
 
-  if (entries.length === 0) {
-    entries.push({ type: 'info', text: '✓ Code exécuté avec succès (aucune sortie)' })
-  }
-
-  // Check for common errors
-  if (code.includes('___')) {
-    return [{ type: 'error', text: 'SyntaxError: expression attendue — remplacez les ___ par votre code' }]
-  }
-
+  if (entries.length === 0) entries.push({ type: 'info', text: '✓ Code exécuté avec succès (aucune sortie)' })
+  if (code.includes('___')) return [{ type: 'error', text: 'SyntaxError: expression attendue — remplacez les ___ par votre code' }]
   return entries
-}
-
-function generateHeatmapData(rows: number, cols: number): number[][] {
-  return Array.from({ length: rows }, () =>
-    Array.from({ length: cols }, () => Math.random() * 2 - 1)
-  )
 }

@@ -36,7 +36,7 @@ export default function ShallowNetPipeline() {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth: 680 }}>
-      <rect width={W} height={H} rx={8} fill="#0d1117" />
+      <rect width={W} height={H} rx={8} fill="var(--bg-base)" />
 
       {/* Step labels */}
       <text x={step1X + boxW / 2} y={22} fill={textDim} fontSize={10}

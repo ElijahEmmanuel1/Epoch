@@ -80,7 +80,7 @@ export default function ApproximationComparison() {
 
   return (
     <svg viewBox={`0 0 ${totalW} ${totalH}`} width="100%" style={{ maxWidth: 600 }}>
-      <rect width={totalW} height={totalH} rx={8} fill="#0d1117" />
+      <rect width={totalW} height={totalH} rx={8} fill="var(--bg-base)" />
 
       {panels.map((panel, pi) => {
         const px = startX + pi * (panelW + gap)

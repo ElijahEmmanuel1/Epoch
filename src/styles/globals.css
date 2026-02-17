@@ -1,164 +1,96 @@
+@import "tailwindcss";
+
 /* ═══════════════════════════════════════════
-   EPOCH — Design System
-   "Code is Light" — Cyberpunk Minimaliste
+   EPOCH — Design System v2
+   Professional Deep Learning Education
+   Dark & Light Themes
    ═══════════════════════════════════════════ */
 
-:root {
-  /* ── Background Hierarchy ── */
-  --bg-void: #060911;
-  --bg-deep: #0a0e1a;
-  --bg-surface: #111528;
-  --bg-elevated: #161b33;
-  --bg-panel: #1a2040;
+@theme {
+  --color-primary: #6366f1;
+  --color-primary-light: #818cf8;
+  --color-primary-dark: #4f46e5;
+  --color-accent: #06b6d4;
+  --color-accent-light: #22d3ee;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
 
-  /* ── Neon Palette ── */
-  --cyan: #00e5ff;
-  --cyan-dim: #00e5ff66;
-  --cyan-glow: #00e5ff33;
-  --magenta: #d946ef;
-  --magenta-dim: #d946ef66;
-  --magenta-glow: #d946ef22;
-  --orange: #ff9100;
-  --orange-dim: #ff910066;
-  --orange-glow: #ff910022;
-  --green: #39ffb0;
-  --green-dim: #39ffb066;
-  --green-glow: #39ffb022;
-  --yellow: #ffe066;
-
-  /* ── Text ── */
-  --text-primary: #e8eaf6;
-  --text-secondary: #9fa8c7;
-  --text-muted: #5c6585;
-
-  /* ── Borders & Dividers ── */
-  --border: #1e2545;
-  --border-active: #2a3366;
-  --divider: #ffffff0a;
-
-  /* ── Typography ── */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
 
-  /* ── Spacing ── */
+/* ═══ DARK THEME (default) ═══ */
+:root {
+  color-scheme: dark;
+  --bg-base: #0f1117;
+  --bg-surface: #161822;
+  --bg-elevated: #1e2030;
+  --bg-overlay: #252840;
+  --bg-hover: #2a2d42;
+  --text-primary: #e4e6f0;
+  --text-secondary: #a0a4b8;
+  --text-muted: #6b6f85;
+  --text-inverse: #0f1117;
+  --border-default: #2a2d42;
+  --border-subtle: #1e2030;
+  --border-active: #6366f1;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 20px rgba(99,102,241,0.15);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-
-  /* ── Transitions ── */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ── Reset ── */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ═══ LIGHT THEME ═══ */
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-base: #f8f9fc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f3f9;
+  --bg-overlay: #e8eaf2;
+  --bg-hover: #eceef5;
+  --text-primary: #1a1c2e;
+  --text-secondary: #4a4d65;
+  --text-muted: #8b8fa5;
+  --text-inverse: #ffffff;
+  --border-default: #e0e2ec;
+  --border-subtle: #eceef5;
+  --border-active: #6366f1;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-glow: 0 0 20px rgba(99,102,241,0.1);
 }
 
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-}
-
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; width: 100%; overflow: hidden; max-width: 100vw; }
 body {
   font-family: var(--font-sans);
-  background: var(--bg-deep);
+  background: var(--bg-base);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-active);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::selection { background: rgba(99,102,241,0.3); color: var(--text-primary); }
 
-/* ── Selection ── */
-::selection {
-  background: var(--cyan-dim);
-  color: var(--text-primary);
-}
+@keyframes pulse-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Animations ── */
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes scan-line {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
-}
-
-/* ── Responsive Breakpoints ──
-   Mobile:  < 768px
-   Tablet:  768px – 1024px
-   Desktop: > 1024px
-   ─────────────────────────── */
-
-/* ── Touch targets — min 44px on mobile ── */
-@media (max-width: 768px) {
-  button, a, [role="button"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
-
-/* ── Prevent horizontal overflow ── */
-html, body, #root {
-  max-width: 100vw;
-}
-
-/* ── KaTeX styling ── */
-.katex {
-  font-size: 1.1em !important;
-  color: var(--text-primary) !important;
-}
-
-.katex .base {
-  color: var(--text-primary);
-}
-
-/* ── KaTeX responsive — prevent overflow ── */
-.katex-display {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding: 4px 0;
-}
-
-@media (max-width: 768px) {
-  .katex {
-    font-size: 0.95em !important;
-  }
-  .katex-display > .katex {
-    font-size: 0.9em !important;
-  }
-}
+.katex { font-size: 1.05em !important; color: var(--text-primary) !important; }
+.katex .base { color: var(--text-primary); }
+.katex-display { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding: 4px 0; }
+@media (max-width: 768px) { .katex { font-size: 0.92em !important; } }
+:focus-visible { outline: 2px solid var(--border-active); outline-offset: 2px; border-radius: 4px; }

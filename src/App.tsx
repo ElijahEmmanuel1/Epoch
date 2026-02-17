@@ -1,20 +1,19 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import Roadmap from './pages/Roadmap'
 import Lab from './pages/Lab'
 import { courseNodes as initialCourses, type CourseNode } from './data/courses'
 
-function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint)
+function useIsMobile(bp = 1024) {
+  const [m, setM] = useState(window.innerWidth < bp)
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < breakpoint)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [breakpoint])
-  return isMobile
+    const h = () => setM(window.innerWidth < bp)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [bp])
+  return m
 }
 
 export default function App() {
@@ -23,84 +22,48 @@ export default function App() {
   const isMobile = useIsMobile()
   const location = useLocation()
 
-  // Close sidebar on route change (mobile)
   useEffect(() => {
     if (isMobile) setSidebarOpen(false)
   }, [location.pathname, isMobile])
 
   const updateCourse = (id: string, partial: Partial<CourseNode>) => {
     setCourses(prev => {
-      // 1. Update the target course
       const newCourses = prev.map(c => (c.id === id ? { ...c, ...partial } : c))
-
-      // 2. Check for newly unlocked courses
-      // We only need to check if the status changed to 'completed'
       if (partial.status === 'completed') {
         let changed = true
-        // Propagate changes until stable (to handle chains if multiple unlock at once, though usually one-by-one)
         while (changed) {
           changed = false
           newCourses.forEach(course => {
             if (course.status === 'locked') {
-              // Check if all dependencies are completed
-              const allDependenciesMet = course.dependencies.every(depId => {
+              const allDeps = course.dependencies.every(depId => {
                 const dep = newCourses.find(c => c.id === depId)
                 return dep?.status === 'completed'
               })
-
-              if (allDependenciesMet) {
-                course.status = 'available'
-                changed = true
-              }
+              if (allDeps) { course.status = 'available'; changed = true }
             }
           })
         }
       }
-      
       return newCourses
     })
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', position: 'relative' }}>
-      {/* Mobile hamburger */}
+    <div className="flex h-screen overflow-hidden bg-[var(--bg-base)] transition-colors duration-300">
       {isMobile && !sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
           aria-label="Open menu"
-          style={{
-            position: 'fixed',
-            top: 12,
-            left: 12,
-            zIndex: 201,
-            width: 44,
-            height: 44,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'var(--bg-panel)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--cyan)',
-            cursor: 'pointer',
-            backdropFilter: 'blur(8px)',
-          }}
+          className="fixed top-3 left-3 z-[201] flex items-center justify-center w-11 h-11 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-primary hover:border-[var(--border-active)] transition-all duration-200 backdrop-blur-sm"
         >
-          <Menu size={22} />
+          <Menu size={20} />
         </button>
       )}
 
-      {/* Overlay */}
       {isMobile && sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            zIndex: 149,
-            backdropFilter: 'blur(2px)',
-          }}
+          className="fixed inset-0 z-[149] bg-black/50 backdrop-blur-sm"
         />
       )}
 
@@ -110,16 +73,11 @@ export default function App() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      <main style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
+
+      <main className="flex-1 overflow-hidden min-w-0">
         <Routes>
-          <Route
-            path="/"
-            element={<Roadmap courses={courses} updateCourse={updateCourse} />}
-          />
-          <Route
-            path="/lab/:courseId"
-            element={<Lab courses={courses} updateCourse={updateCourse} />}
-          />
+          <Route path="/" element={<Roadmap courses={courses} updateCourse={updateCourse} />} />
+          <Route path="/lab/:courseId" element={<Lab courses={courses} updateCourse={updateCourse} />} />
         </Routes>
       </main>
     </div>

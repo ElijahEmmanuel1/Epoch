@@ -48,7 +48,7 @@ export default function PiecewiseLinearGraph() {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth: 580 }}>
-      <rect width={W} height={H} rx={8} fill="#0d1117" />
+      <rect width={W} height={H} rx={8} fill="var(--bg-base)" />
 
       {/* Region shading */}
       {regions.map((r, i) => (
@@ -88,7 +88,7 @@ export default function PiecewiseLinearGraph() {
       {/* Joint dots */}
       {joints.map((j, i) => (
         <g key={i}>
-          <circle cx={sx(j.x)} cy={sy(j.y)} r={5} fill="#0d1117" stroke="#ff9100"
+          <circle cx={sx(j.x)} cy={sy(j.y)} r={5} fill="var(--bg-base)" stroke="#ff9100"
             strokeWidth={2} />
           <text x={sx(j.x)} y={sy(j.y) - 12} fill="#ff9100" fontSize={10}
             textAnchor="middle" fontFamily="monospace" fontWeight={700}>

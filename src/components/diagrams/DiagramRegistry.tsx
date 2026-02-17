@@ -1,12 +1,10 @@
 /**
  * DiagramRegistry — Maps diagramId to React SVG components
- * When a TheoryBlock has type 'diagram' + diagramId, we render the SVG
+ * When a TheoryBlock has type 'diagram' + diagramId, we render the
  * component instead of the ASCII <pre> fallback.
  */
 import { type ComponentType, lazy, Suspense } from 'react'
 
-// Lazy-load diagram components to keep bundle lean
-// Lazy-load diagram components to keep bundle lean
 const ReluGraph = lazy(() => import('./ReluGraph'))
 const SlopeConstructionGraph = lazy(() => import('./SlopeConstructionGraph'))
 const BumpConstructionGraph = lazy(() => import('./BumpConstructionGraph'))
@@ -33,7 +31,7 @@ export default function DiagramRenderer({ diagramId }: Props) {
 
   return (
     <Suspense fallback={
-      <div style={{ padding: 20, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', fontSize: 11 }}>
+      <div className="p-5 text-[var(--text-muted)] font-mono text-xs">
         Chargement du diagramme…
       </div>
     }>
