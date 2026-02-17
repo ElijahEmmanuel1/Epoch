@@ -39,7 +39,7 @@ export function ReLUHinge() {
                 <text x={mapX(0) - 20} y={padding} textAnchor="end" fill="#71717a" fontSize="12">a</text>
             </svg>
             <p className="text-zinc-500 text-xs mt-4 text-center max-w-sm">
-                La fonction ReLU "éteint" les valeurs négatives (z < 0) et laisse passer les valeurs positives linéairement.
+                La fonction ReLU "éteint" les valeurs négatives (z &lt; 0) et laisse passer les valeurs positives linéairement.
             </p>
         </Card>
     );

@@ -124,6 +124,14 @@ export default async function ChapterPage({ params }: { params: Promise<{ chapte
                                 </div>
                             );
                         }
+                        case "list":
+                            return (
+                                <ul key={i} className="list-disc pl-6 space-y-2 text-muted-foreground font-serif marker:text-zinc-500">
+                                    {block.items?.map((item, idx) => (
+                                        <li key={idx} className="leading-relaxed">{item}</li>
+                                    ))}
+                                </ul>
+                            );
                         case "callout": {
                             const icons = {
                                 info: Code,
