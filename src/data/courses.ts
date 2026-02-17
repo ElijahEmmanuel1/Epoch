@@ -32,6 +32,7 @@ export interface TheoryBlock {
   content: string;
   label?: string;
   highlightVar?: string; // variable name that links to code
+  diagramId?: string;    // when set on a 'diagram' block, renders an SVG component instead of ASCII <pre>
 }
 
 // ── Sample Course Data ──
@@ -361,18 +362,8 @@ print(col + row)
       },
       {
         type: 'diagram',
-        content: `      ÉTAPE 1             ÉTAPE 2              ÉTAPE 3
-  ┌─────────────┐   ┌──────────────┐   ┌───────────────────┐
-  │ 3 fonctions │   │  Activation  │   │   Combinaison     │
-  │ linéaires   │──▶│   ReLU a[•]  │──▶│   linéaire        │
-  │ de l'entrée │   │  (clip < 0)  │   │   + offset ϕ₀     │
-  └─────────────┘   └──────────────┘   └───────────────────┘
-
-  θ₁₀ + θ₁₁·x  ──▶  h₁ = ReLU[•] ──┐
-                                      ├──▶ y = ϕ₀ + ϕ₁h₁ + ϕ₂h₂ + ϕ₃h₃
-  θ₂₀ + θ₂₁·x  ──▶  h₂ = ReLU[•] ──┤
-                                      │
-  θ₃₀ + θ₃₁·x  ──▶  h₃ = ReLU[•] ──┘`,
+        content: '',
+        diagramId: 'shallow-net-pipeline',
         label: 'Fig. 3.3 — Pipeline de calcul d\'un réseau superficiel',
       },
       {
@@ -395,16 +386,8 @@ print(col + row)
       },
       {
         type: 'diagram',
-        content: `  y ▲
-    │        ╱
-    │       ╱
-    │      ╱   ← pente = 1
-    │     ╱
-    │    ╱
-  ──┼───╱──────────▶ z
-    │  ╱
-    │ (clipped à 0 pour z < 0)
-    │`,
+        content: '',
+        diagramId: 'relu-graph',
         label: 'Fig. 3.1 — Graphe du ReLU : retourne z si z ≥ 0, sinon 0',
       },
       {
@@ -445,22 +428,8 @@ print(col + row)
       },
       {
         type: 'diagram',
-        content: `  y ▲
-    │         ╱╲
-    │        ╱  ╲          ╱
-    │       ╱    ╲        ╱
-    │      ╱      ╲      ╱
-    │     ╱        ╲    ╱
-    │    ╱    R2    ╲  ╱
-    │   ╱            ╲╱
-    │  ╱  R1      R3    R4
-  ──┼─╱──────┼──────┼──────┼──▶ x
-    │  joint₁   joint₂   joint₃
-
-  R1 : h₁=off, h₂=off, h₃=off  →  pente = 0
-  R2 : h₁=on,  h₂=off, h₃=off  →  pente = ϕ₁·θ₁₁
-  R3 : h₁=on,  h₂=on,  h₃=off  →  pente = ϕ₁·θ₁₁ + ϕ₂·θ₂₁
-  R4 : h₁=on,  h₂=on,  h₃=on   →  pente = ϕ₁·θ₁₁ + ϕ₂·θ₂₁ + ϕ₃·θ₃₁`,
+        content: '',
+        diagramId: 'piecewise-linear',
         label: 'Fig. 3.2 — Fonction linéaire par morceaux avec 4 régions',
       },
       {
@@ -526,14 +495,8 @@ print(col + row)
       },
       {
         type: 'diagram',
-        content: `  D = 2           D = 5               D = 20
-  ▲               ▲                   ▲
-  │ ╱╲            │    ╱╲              │  ·∼∼∼∼·
-  │╱  ╲  ╱       │   ╱  ╲  ╱╲        │ ∫   f(x) dx
-  │    ╲╱         │  ╱    ╲╱  ╲ ╱    │ ≈ somme de
-  │               │ ╱          ╲╱     │   segments
-  └──────▶       └──────────▶       └──────────▶
-  3 régions       6 régions           ≈ courbe lisse`,
+        content: '',
+        diagramId: 'universal-approximation',
         label: 'Fig. 3.5 — Approximation : plus de hidden units → plus de régions → meilleure fidélité',
       },
       {

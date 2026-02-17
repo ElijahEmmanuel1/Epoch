@@ -5,6 +5,7 @@ import { BlockMath } from 'react-katex'
 import { Lightbulb, AlertTriangle, Info, HelpCircle } from 'lucide-react'
 import type { CourseNode, Exercise, TheoryBlock } from '../data/courses'
 import NeuralDiagram from './NeuralDiagram'
+import DiagramRenderer, { hasDiagram } from './diagrams/DiagramRegistry'
 import styles from './NeuralCanvas.module.css'
 
 interface Props {
@@ -85,7 +86,11 @@ function TheoryView({
           {block.type === 'diagram' && (
             <div className={styles.inlineDiagram}>
               {block.label && <span className={styles.diagramLabel}>{block.label}</span>}
-              <pre className={styles.diagramPre}>{block.content}</pre>
+              {block.diagramId && hasDiagram(block.diagramId) ? (
+                <DiagramRenderer diagramId={block.diagramId} />
+              ) : (
+                <pre className={styles.diagramPre}>{block.content}</pre>
+              )}
             </div>
           )}
 
